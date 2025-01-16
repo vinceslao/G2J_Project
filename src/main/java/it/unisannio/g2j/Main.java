@@ -22,16 +22,16 @@ public class Main {
             System.out.println("Albero Sintattico:");
             System.out.println(tree.toStringTree(parser));
             */
-            MyVisitor visitor = new MyVisitor();
+
+            // Dalla grammatica a JavaCC
+
+            MyVisitor1 visitor = new MyVisitor1();
             visitor.visit(tree);
 
             String outputFileName = "output.jj";
-
-            // Salva il risultato in un file
             FileWriter writer = new FileWriter(outputFileName);
             writer.write(visitor.getOutput());
             writer.close();
-
             System.out.println("File .jj generato con successo: " + outputFileName);
 
         }catch (Exception e) {

@@ -1,10 +1,71 @@
-PARSER_BEGIN(MyParser)
-
-public class MyParser {
+options {
+    Static = false;
 }
 
-PARSER_END(MyParser)
+PARSER_BEGIN(gParser)
 
-SKIP : { " " | "\t" | "\n" | "\r" }
+public class gParser {
+    public static void main(String[] args) throws ParseException, FileNotFoundException {
+        InputStream s;
+        if(args.length > 0){
+            String fileName = args[0];
+            s = new FileInputStream(args[0]);
+        } else {
+            System.out.println(args.length);
+            s = System.in;
+        }
 
-<Program> : <Statements> "EOF" <Statements> ::= <Statement> "SEMICOLON" <Statements> | <Statement> <Statement> ::= <CallRead> | <CallWrite> | <Assigment> | <IfThen> | <RepeatUntil> <CallWrite> ::= "WRITE" ( "ID" | "NUMBER" ) <CalRead> ::= "READ" ( "ID" ) <Assignment> ::= "ID" "ASSIGMENT" <Expression> <Expression> ::= <Expression> "SUM_DIF" <MulDivExpr> | <MulDivExpr> <MulDivExpr> ::= <MulDivExpr> "MUL_DIV" <Factor> | <Factor> <Factor> ::= "ID" | "NUMBER" | ( "LEF_PAR" <Expression> "RIGHT_PAR" ) <IfThen> ::= "IF" <Condition> "THEN" <Statements> [ "ELSE" <Statements> ] "END" <Condition> ::= <Expression> "COMPARISON" <Expression> <RepeatUntil> ::= "REPEAT" <Statements> "UNTIL" <Condition> ;
+        gParserTokenManager tokenmanager = new gParserTokenManager(new SimpleCharStream(s));
+        Token token;
+
+        while ((token = tokenmanager.getNextToken()).kind != EOF) {
+            System.out.println("lessema: " + token.image + " --> Token associato: " + tokenImage[token.kind]);
+        }
+
+}
+
+PARSER_END(gParser)
+
+TOKEN : {
+    <NUMBER: "NUMBER">
+    <REPEAT: "REPEAT">
+    <UNTIL: "UNTIL">
+    <WRITE: "WRITE">
+    <READ: "READ">
+    <MUL_DIV: "MUL_DIV">
+    <LEF_PAR: "LEF_PAR">
+    <SEMICOLON: "SEMICOLON">
+    <SUM_DIF: "SUM_DIF">
+    <ASSIGMENT: "ASSIGMENT">
+    <ELSE: "ELSE">
+    <RIGHT_PAR: "RIGHT_PAR">
+    <THEN: "THEN">
+    <END: "END">
+    <ID: "ID">
+    <EOF: "EOF">
+    <IF: "IF">
+    <COMPARISON: "COMPARISON">
+    <(: "(">
+    <): ")">
+    <[: "[">
+    <|: "|">
+    <::=: "::=">
+    <]: "]">
+}
+
+TOKEN: {
+    <#LETTER: (["A"-"Z","a"-"z"]+)>
+    | <#NUMBA: (["0"-"9"]+)>
+}
+
+SKIP : {
+    < SKIPPED : [ " ", "\t", "\n", "\r"] >
+    | <COMMENT: "{" (~["}"])* "}">
+}
+
+
+// Regole di produzione
+void Program() :
+{}
+{null}
+
