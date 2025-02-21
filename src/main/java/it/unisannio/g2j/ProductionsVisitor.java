@@ -2,7 +2,7 @@ package it.unisannio.g2j;
 
 import it.unisannio.g2j.G2JParser.*;
 
-public class MyVisitor extends G2JBaseVisitor<String>{
+public class ProductionsVisitor extends G2JBaseVisitor<String>{
 
     private StringBuilder output = new StringBuilder();
 

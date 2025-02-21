@@ -25,7 +25,7 @@ public class Main {
 
             // Dalla grammatica a JavaCC
 
-            MyVisitor1 visitor = new MyVisitor1();
+            TokenVisitor visitor = new TokenVisitor();
             visitor.visit(tree);
 
             String outputFileName = "output.jj";

@@ -62,10 +62,3 @@ SKIP : {
     < SKIPPED : [ " ", "\t", "\n", "\r"] >
     | <COMMENT: "{" (~["}"])* "}">
 }
-
-
-// Regole di produzione
-void Program() :
-{}
-{null}
-

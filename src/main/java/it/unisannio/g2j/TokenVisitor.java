@@ -5,7 +5,7 @@ import it.unisannio.g2j.G2JParser.*;
 import java.util.HashSet;
 import java.util.Set;
 
-public class MyVisitor1 extends G2JBaseVisitor<String> {
+public class TokenVisitor extends G2JBaseVisitor<String> {
     private StringBuilder output = new StringBuilder();
     private Set<String> terminals = new HashSet<>();
     private Set<String> nonTerminals = new HashSet<>();
@@ -45,9 +45,6 @@ public class MyVisitor1 extends G2JBaseVisitor<String> {
         }
 
         generateTokens();
-
-        // Generazione delle regole di produzione
-        generateProductions(ctx);
 
         return output.toString();
     }
