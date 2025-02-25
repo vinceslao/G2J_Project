@@ -4,7 +4,9 @@ grammar G2J;
 package it.unisannio.g2j;
 }
 // Regola principale
-grammarFile: rule+;
+grammarFile: (token+ | rule+) ;
+
+token: terminal '::=' REGEX ;
 
 // Una regola di produzione
 rule: nonTerminal '::=' productionList;
@@ -21,16 +23,19 @@ element: nonTerminal
        | specialSymbol;
 
 // Un non terminale (es: <Program>)
-nonTerminal: '<' ID '>';
+nonTerminal: '<' NON_TERM '>';
 
 // Un terminale (es: WRITE)
-terminal: ID;
+terminal: TERM;
 
 // Simboli speciali (es: ;, (), ecc.)
 specialSymbol: '(' | ')' | '[' | ']' | '{' | '}' | '|' | '=' | '+' | '-' | '*' | '/' | ';' | ',' | '.' | ':' | '::=';
 
 // Identificatori e simboli
 ID: [a-zA-Z_][a-zA-Z0-9_]*;
+TERM: [A-Z][A-Z_]* ;
+NON_TERM: [a-z][a-z_]* ;
+REGEX: ~[ \t\r\n]+;
 
 // Ignora spazi e commenti
 WS: [ \t\r\n]+ -> skip;

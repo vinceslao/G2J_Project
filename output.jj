@@ -27,30 +27,6 @@ public class gParser {
 PARSER_END(gParser)
 
 TOKEN : {
-    <NUMBER: "NUMBER">
-    <REPEAT: "REPEAT">
-    <UNTIL: "UNTIL">
-    <WRITE: "WRITE">
-    <READ: "READ">
-    <MUL_DIV: "MUL_DIV">
-    <LEF_PAR: "LEF_PAR">
-    <SEMICOLON: "SEMICOLON">
-    <SUM_DIF: "SUM_DIF">
-    <ASSIGMENT: "ASSIGMENT">
-    <ELSE: "ELSE">
-    <RIGHT_PAR: "RIGHT_PAR">
-    <THEN: "THEN">
-    <END: "END">
-    <ID: "ID">
-    <EOF: "EOF">
-    <IF: "IF">
-    <COMPARISON: "COMPARISON">
-    <(: "(">
-    <): ")">
-    <[: "[">
-    <|: "|">
-    <::=: "::=">
-    <]: "]">
 }
 
 TOKEN: {

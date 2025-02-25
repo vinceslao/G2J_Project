@@ -11,7 +11,7 @@ import java.io.InputStream;
 public class Main {
     public static void main(String[] args) {
         try {
-            String fileName = "grammar.txt";
+            String fileName = "input.txt";
             InputStream input = new FileInputStream(fileName);
 
             G2JLexer lexer = new G2JLexer(CharStreams.fromStream(input));

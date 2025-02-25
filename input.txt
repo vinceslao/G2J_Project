@@ -1,3 +1,21 @@
+ID            ::= [a-zA-Z][a-zA-Z0-9]*
+NUMBER        ::= [0-9]+
+SEMICOLON     ::= ";"
+ASSIGNMENT    ::= ":="
+SUM_DIF       ::= "+" | "-"
+MUL_DIV       ::= "*" | "/"
+LEF_PAR       ::= "("
+RIGHT_PAR     ::= ")"
+WRITE         ::= "WRITE"
+READ          ::= "READ"
+IF            ::= "IF"
+THEN          ::= "THEN"
+ELSE          ::= "ELSE"
+END           ::= "END"
+REPEAT        ::= "REPEAT"
+UNTIL         ::= "UNTIL"
+COMPARISON    ::= "==" | "!=" | "<" | "<=" | ">" | ">="
+
 <Program>::= <Statements> EOF
 <Statements>::= <Statement> SEMICOLON <Statements> | <Statement>
 <Statement>::= <CallRead> | <CallWrite> | <Assigment> | <IfThen> | <RepeatUntil>
@@ -10,3 +28,5 @@
 <IfThen>::= IF <Condition> THEN <Statements> [ELSE <Statements>] END
 <Condition>::= <Expression> COMPARISON <Expression>
 <RepeatUntil>::= REPEAT <Statements> UNTIL <Condition>
+
+
