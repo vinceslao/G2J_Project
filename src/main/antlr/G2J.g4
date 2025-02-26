@@ -1,41 +1,68 @@
+/*
+    Questa grammatica ha lo scopo di verificare la correttezza della descrizione EBNF di grammatiche generiche
+*/
+
 grammar G2J;
 
 @header {
 package it.unisannio.g2j;
 }
-// Regola principale
-grammarFile: (token+ | rule+) ;
 
-token: terminal '::=' REGEX ;
+// Regola principale
+grammarFile: (lexRule | parseRule)+ EOF ;
+
+// Definizione di una regola lesicale
+
+lexRule: TERM ASSIGN (regex | STRING (PIPE STRING | regex)* );
 
 // Una regola di produzione
-rule: nonTerminal '::=' productionList;
+parseRule: NON_TERM ASSIGN productionList;
 
 // Lista di produzioni (separate da |)
-productionList: production ('|' production)*;
+productionList: production (PIPE production)*;
 
 // Una produzione
 production: element+;
 
 // Elemento di una produzione (può essere terminale o non terminale)
-element: nonTerminal
-       | terminal
-       | specialSymbol;
+element: NON_TERM | TERM | STRING | '(' | ')' | '[' | ']' | PIPE;
 
-// Un non terminale (es: <Program>)
-nonTerminal: '<' NON_TERM '>';
+// Gestione espressioni regolari
+regex      : term ( '|' term )* ; // L'espressione regolare completa
 
-// Un terminale (es: WRITE)
-terminal: TERM;
+term       : factor+ ; // Uno o più fattori concatenati
 
-// Simboli speciali (es: ;, (), ecc.)
-specialSymbol: '(' | ')' | '[' | ']' | '{' | '}' | '|' | '=' | '+' | '-' | '*' | '/' | ';' | ',' | '.' | ':' | '::=';
+factor     : primary ( '*' | '+' | '?' )? ; // Un elemento con quantificatori opzionali
 
-// Identificatori e simboli
-ID: [a-zA-Z_][a-zA-Z0-9_]*;
+primary    : CHAR                // Un carattere normale
+           | ESCAPED_CHAR         // Un carattere speciale con backslash
+           | '.'                  // Punto (matcha qualsiasi carattere)
+           | CHAR_CLASS        // Una classe di caratteri come [a-zA-Z_]
+           | '(' regex ')'    // Un gruppo tra parentesi
+           ;
+
+CHAR_CLASS : '[' NEGATION? (CHAR | ESCAPED_CHAR | '-')+ ']' ; // Classe di caratteri
+
+// +++++++++++++
+// + LEXER
+// +++++++++++++
+
+// Simboli di EBNF
+ASSIGN: '::=';
+PIPE: '|';
+
+// Identificatori per non terminali e terminali
 TERM: [A-Z][A-Z_]* ;
-NON_TERM: [a-z][a-z_]* ;
-REGEX: ~[ \t\r\n]+;
+NON_TERM: '<' [A-Z][a-zA-Z]* '>' ;
+
+// Stringhe tra virgolette
+STRING: '"' .*? '"';
+
+// Token espressioni regolari
+NEGATION  : '^' ; // Per classi negate come [^a-z]
+CHAR      : [a-zA-Z0-9] ; // Lettere, numeri e underscore
+ESCAPED_CHAR : '\\' [dwsrtfn\\.*+?()|[\]] ; // Escape per caratteri speciali
 
 // Ignora spazi e commenti
 WS: [ \t\r\n]+ -> skip;
+COMMENT: '/*' .*? '*/' -> skip;
