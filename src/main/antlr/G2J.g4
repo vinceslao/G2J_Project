@@ -1,5 +1,5 @@
 /*
-    Questa grammatica ha lo scopo di verificare la correttezza della descrizione EBNF di grammatiche generiche
+    Questa grammatica ha lo scopo di verificare la correttezza della descrizione di grammatiche generiche
 */
 
 grammar G2J;
@@ -8,11 +8,14 @@ grammar G2J;
 package it.unisannio.g2j;
 }
 
+// +++++++++++++
+// + PARSER
+// +++++++++++++
+
 // Regola principale
 grammarFile: (lexRule | parseRule)+ EOF ;
 
-// Definizione di una regola lesicale
-
+// Definizione di una regola lessicale
 lexRule: TERM ASSIGN (regex | STRING (PIPE STRING | regex)* );
 
 // Una regola di produzione
@@ -41,7 +44,6 @@ primary    : CHAR                // Un carattere normale
            | '(' regex ')'    // Un gruppo tra parentesi
            ;
 
-CHAR_CLASS : '[' NEGATION? (CHAR | ESCAPED_CHAR | '-')+ ']' ; // Classe di caratteri
 
 // +++++++++++++
 // + LEXER
@@ -62,6 +64,7 @@ STRING: '"' .*? '"';
 NEGATION  : '^' ; // Per classi negate come [^a-z]
 CHAR      : [a-zA-Z0-9] ; // Lettere, numeri e underscore
 ESCAPED_CHAR : '\\' [dwsrtfn\\.*+?()|[\]] ; // Escape per caratteri speciali
+CHAR_CLASS : '[' NEGATION? (CHAR | ESCAPED_CHAR | '-')+ ']' ; // Classe di caratteri
 
 // Ignora spazi e commenti
 WS: [ \t\r\n]+ -> skip;
