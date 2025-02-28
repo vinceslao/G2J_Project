@@ -1,7 +1,5 @@
 package it.unisannio.g2j;
 
-import it.unisannio.g2j.G2JParser.*;
-import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -9,9 +7,15 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
-public class TokenVisitor extends G2JBaseVisitor<Void> {
+public class SemanticVisitor extends G2JBaseVisitor<Void> {
+
+    private Set<String> definedNonTerminals = new HashSet<>();
+    private Set<String> definedTerminals = new HashSet<>();
+    private Set<String> usedNonTerminals = new HashSet<>();
+    private Set<String> usedTerminals = new HashSet<>();
 
     @Override
     public Void visitGrammarFile(G2JParser.GrammarFileContext ctx) {
@@ -33,7 +37,9 @@ public class TokenVisitor extends G2JBaseVisitor<Void> {
 
     @Override
     public Void visitParseRule(G2JParser.ParseRuleContext ctx) {
-        System.out.println("Visiting Parsing Rule: " + ctx.getText());
+        String nonTerminal = ctx.NON_TERM().getText();
+        definedNonTerminals.add(nonTerminal);
+        System.out.println("Visiting Parsing Rule: " + nonTerminal);
         return visitChildren(ctx);
     }
 
@@ -51,7 +57,17 @@ public class TokenVisitor extends G2JBaseVisitor<Void> {
 
     @Override
     public Void visitElement(G2JParser.ElementContext ctx) {
-        System.out.println("Visiting Element: " + ctx.getText());
+        if (ctx.NON_TERM() != null) {
+            String nonTerminal = ctx.NON_TERM().getText();
+            usedNonTerminals.add(nonTerminal);
+            System.out.println("Visiting Non-Terminal: " + nonTerminal);
+        } else if (ctx.TERM() != null && !Objects.equals(ctx.TERM().getText(), "EOF")) {
+            String terminal = ctx.TERM().getText();
+            usedTerminals.add(terminal);
+            System.out.println("Visiting Terminal: " + terminal);
+        } else if (ctx.STRING() != null) {
+            System.out.println("Visiting String: " + ctx.STRING().getText());
+        }
         return visitChildren(ctx);
     }
 
@@ -75,7 +91,9 @@ public class TokenVisitor extends G2JBaseVisitor<Void> {
 
     @Override
     public Void visitLexRule(G2JParser.LexRuleContext ctx) {
-        System.out.println("Visiting Lexical Rule: " + ctx.getText());
+        String terminal = ctx.TERM().getText();
+        definedTerminals.add(terminal);
+        System.out.println("Visiting Lexical Rule: " + terminal);
         return visitChildren(ctx);
     }
 
@@ -97,20 +115,40 @@ public class TokenVisitor extends G2JBaseVisitor<Void> {
         return visitChildren(ctx);
     }
 
-    public static void main(String[] args) throws Exception {
-    //    String input = "<Example> ::= \"a\" | \"b\" "; // Test input
+    public void checkSemantics() {
+        // Verifica che tutti i non terminali usati siano definiti
+        for (String nonTerminal : usedNonTerminals) {
+            if (!definedNonTerminals.contains(nonTerminal)) {
+                System.err.println("Errore semantico: Non terminale non definito - " + nonTerminal);
+            }
+        }
 
+        // Verifica che tutti i terminali usati siano definiti
+        for (String terminal : usedTerminals) {
+            if (!definedTerminals.contains(terminal)) {
+                System.err.println("Errore semantico: Terminale non definito - " + terminal);
+            }
+        }
+
+        // Verifica che non ci siano cicli nelle produzioni (questa è una versione semplificata)
+        // Una versione più completa richiederebbe un'analisi più approfondita delle dipendenze
+        for (String nonTerminal : definedNonTerminals) {
+            if (usedNonTerminals.contains(nonTerminal)) {
+                System.err.println("Avviso: Possibile ciclo nelle produzioni per - " + nonTerminal);
+            }
+        }
+    }
+
+    public static void main(String[] args) throws Exception {
         String fileName = "input.txt";
         InputStream input = new FileInputStream(fileName);
-    //    CharStream charStream = CharStreams.fromString(input);
-    //    G2JLexer lexer = new G2JLexer(charStream);
         G2JLexer lexer = new G2JLexer(CharStreams.fromStream(input));
         CommonTokenStream tokens = new CommonTokenStream(lexer);
         G2JParser parser = new G2JParser(tokens);
 
         ParseTree tree = parser.grammarFile();
-        TokenVisitor visitor = new TokenVisitor();
+        SemanticVisitor visitor = new SemanticVisitor();
         visitor.visit(tree);
+        visitor.checkSemantics();
     }
 }
-
