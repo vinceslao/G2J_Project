@@ -1,3 +1,6 @@
+/* Input in notazione BNF */
+
+/* Token */
 ID            ::= [a-zA-Z][a-zA-Z0-9]*
 NUMBER        ::= [0-9]+
 SEMICOLON     ::= ";"
@@ -16,6 +19,7 @@ REPEAT        ::= "REPEAT"
 UNTIL         ::= "UNTIL"
 COMPARISON    ::= "==" | "!=" | "<" | "<=" | ">" | ">="
 
+/* Regole di produzione */
 <Program>::= <Statements> EOF
 <Statements>::= <Statement> SEMICOLON <Statements> | <Statement>
 <Statement>::= <CallRead> | <CallWrite> | <Assigment> | <IfThen> | <RepeatUntil>
@@ -28,5 +32,3 @@ COMPARISON    ::= "==" | "!=" | "<" | "<=" | ">" | ">="
 <IfThen>::= IF <Condition> THEN <Statements> [ELSE <Statements>] END
 <Condition>::= <Expression> COMPARISON <Expression>
 <RepeatUntil>::= REPEAT <Statements> UNTIL <Condition>
-
-

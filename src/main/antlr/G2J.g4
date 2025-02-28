@@ -13,10 +13,11 @@ package it.unisannio.g2j;
 // +++++++++++++
 
 // Regola principale
-grammarFile: (lexRule | parseRule)+ EOF ;
+grammarFile: rules EOF ;
 
-// Definizione di una regola lessicale
-lexRule: TERM ASSIGN (regex | STRING (PIPE STRING | regex)* );
+rules: rule+ ;
+
+rule: lexRule | parseRule ;
 
 // Una regola di produzione
 parseRule: NON_TERM ASSIGN productionList;
@@ -25,23 +26,33 @@ parseRule: NON_TERM ASSIGN productionList;
 productionList: production (PIPE production)*;
 
 // Una produzione
-production: element+;
+production: element+ ;
 
-// Elemento di una produzione (può essere terminale o non terminale)
-element: NON_TERM | TERM | STRING | '(' | ')' | '[' | ']' | PIPE;
+// Elemento di una produzione
+element: NON_TERM | TERM | STRING | PIPE | grouping | optionality | repetivity;
 
-// Gestione espressioni regolari
-regex      : term ( '|' term )* ; // L'espressione regolare completa
+grouping: LEFT_ROUND_BRACKET production RIGHT_ROUND_BRACKET ;
+
+optionality: LEFT_SQUARE_BRACKET production RIGHT_SQUARE_BRACKET;
+
+repetivity: LEFT_CURLY_BRACKET production RIGHT_CURLY_BRACKET;
+
+// Definizione di una regola lessicale
+lexRule: TERM ASSIGN regex+;
+
+// Gestione espressioni regolari che definiscono i token
+regex      : term ( PIPE term )* ; // L'espressione regolare completa
 
 term       : factor+ ; // Uno o più fattori concatenati
 
-factor     : primary ( '*' | '+' | '?' )? ; // Un elemento con quantificatori opzionali
+factor     : primary ( KLEENE_CLOSURE | POSITIVE_CLOSURE | OPTIONALITY )? ; // Un elemento con quantificatori opzionali
 
 primary    : CHAR                // Un carattere normale
            | ESCAPED_CHAR         // Un carattere speciale con backslash
-           | '.'                  // Punto (matcha qualsiasi carattere)
+           | DOT                  // Punto (matcha qualsiasi carattere)
            | CHAR_CLASS        // Una classe di caratteri come [a-zA-Z_]
-           | '(' regex ')'    // Un gruppo tra parentesi
+           | LEFT_ROUND_BRACKET regex RIGHT_ROUND_BRACKET    // Un gruppo tra parentesi
+           | STRING
            ;
 
 
@@ -49,9 +60,15 @@ primary    : CHAR                // Un carattere normale
 // + LEXER
 // +++++++++++++
 
-// Simboli di EBNF
+// Simboli
 ASSIGN: '::=';
 PIPE: '|';
+LEFT_ROUND_BRACKET: '(';
+RIGHT_ROUND_BRACKET: ')';
+LEFT_SQUARE_BRACKET: '[';
+RIGHT_SQUARE_BRACKET: ']';
+LEFT_CURLY_BRACKET: '{';
+RIGHT_CURLY_BRACKET: '}';
 
 // Identificatori per non terminali e terminali
 TERM: [A-Z][A-Z_]* ;
@@ -65,6 +82,10 @@ NEGATION  : '^' ; // Per classi negate come [^a-z]
 CHAR      : [a-zA-Z0-9] ; // Lettere, numeri e underscore
 ESCAPED_CHAR : '\\' [dwsrtfn\\.*+?()|[\]] ; // Escape per caratteri speciali
 CHAR_CLASS : '[' NEGATION? (CHAR | ESCAPED_CHAR | '-')+ ']' ; // Classe di caratteri
+DOT: '.';
+KLEENE_CLOSURE: '*';
+POSITIVE_CLOSURE: '+';
+OPTIONALITY: '?';
 
 // Ignora spazi e commenti
 WS: [ \t\r\n]+ -> skip;
