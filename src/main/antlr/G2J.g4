@@ -1,7 +1,3 @@
-/*
-    Questa grammatica ha lo scopo di verificare la correttezza della descrizione di grammatiche generiche
-*/
-
 grammar G2J;
 
 @header {
@@ -15,9 +11,9 @@ package it.unisannio.g2j;
 // Regola principale
 grammarFile: rules EOF ;
 
-rules: rule+ ;
+rules: rule+;
 
-rule: lexRule | parseRule ;
+rule: (lexRule | parseRule) SEMICOLON ;
 
 // Una regola di produzione
 parseRule: NON_TERM ASSIGN productionList;
@@ -61,6 +57,7 @@ primary    : CHAR                // Un carattere normale
 // +++++++++++++
 
 // Simboli
+SEMICOLON: ';';
 ASSIGN: '::=';
 PIPE: '|';
 LEFT_ROUND_BRACKET: '(';

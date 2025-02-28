@@ -20,8 +20,14 @@ public class TokenVisitor extends G2JBaseVisitor<Void> {
     }
 
     @Override
-    public Void visitLexRule(G2JParser.LexRuleContext ctx) {
-        System.out.println("Visiting Lexical Rule: " + ctx.getText());
+    public Void visitRules(G2JParser.RulesContext ctx) {
+        System.out.println("Visiting Rules");
+        return visitChildren(ctx);
+    }
+
+    @Override
+    public Void visitRule(G2JParser.RuleContext ctx) {
+        System.out.println("Visiting Rule");
         return visitChildren(ctx);
     }
 
@@ -32,14 +38,44 @@ public class TokenVisitor extends G2JBaseVisitor<Void> {
     }
 
     @Override
-    public Void visitElement(G2JParser.ElementContext ctx) {
-        System.out.println("Visiting Element: " + ctx.getText());
+    public Void visitProductionList(G2JParser.ProductionListContext ctx) {
+        System.out.println("Visiting Production List");
         return visitChildren(ctx);
     }
 
     @Override
     public Void visitProduction(G2JParser.ProductionContext ctx) {
         System.out.println("Visiting Production: " + ctx.getText());
+        return visitChildren(ctx);
+    }
+
+    @Override
+    public Void visitElement(G2JParser.ElementContext ctx) {
+        System.out.println("Visiting Element: " + ctx.getText());
+        return visitChildren(ctx);
+    }
+
+    @Override
+    public Void visitGrouping(G2JParser.GroupingContext ctx) {
+        System.out.println("Visiting Grouping");
+        return visitChildren(ctx);
+    }
+
+    @Override
+    public Void visitOptionality(G2JParser.OptionalityContext ctx) {
+        System.out.println("Visiting Optionality");
+        return visitChildren(ctx);
+    }
+
+    @Override
+    public Void visitRepetivity(G2JParser.RepetivityContext ctx) {
+        System.out.println("Visiting Repetivity");
+        return visitChildren(ctx);
+    }
+
+    @Override
+    public Void visitLexRule(G2JParser.LexRuleContext ctx) {
+        System.out.println("Visiting Lexical Rule: " + ctx.getText());
         return visitChildren(ctx);
     }
 

@@ -1,34 +1,34 @@
 /* Input in notazione BNF */
 
 /* Token */
-ID            ::= [a-zA-Z][a-zA-Z0-9]*
-NUMBER        ::= [0-9]+
-SEMICOLON     ::= ";"
-ASSIGNMENT    ::= ":="
-SUM_DIF       ::= "+" | "-"
-MUL_DIV       ::= "*" | "/"
-LEF_PAR       ::= "("
-RIGHT_PAR     ::= ")"
-WRITE         ::= "WRITE"
-READ          ::= "READ"
-IF            ::= "IF"
-THEN          ::= "THEN"
-ELSE          ::= "ELSE"
-END           ::= "END"
-REPEAT        ::= "REPEAT"
-UNTIL         ::= "UNTIL"
-COMPARISON    ::= "==" | "!=" | "<" | "<=" | ">" | ">="
+ID            ::= [a-zA-Z][a-zA-Z0-9]* ;
+NUMBER        ::= [0-9]+ ;
+SEMICOLON     ::= ";" ;
+ASSIGNMENT    ::= ":=" ;
+SUM_DIF       ::= "+" | "-" ;
+MUL_DIV       ::= "*" | "/" ;
+LEF_PAR       ::= "(" ;
+RIGHT_PAR     ::= ")" ;
+WRITE         ::= "WRITE" ;
+READ          ::= "READ" ;
+IF            ::= "IF" ;
+THEN          ::= "THEN" ;
+ELSE          ::= "ELSE" ;
+END           ::= "END" ;
+REPEAT        ::= "REPEAT" ;
+UNTIL         ::= "UNTIL" ;
+COMPARISON    ::= "==" | "!=" | "<" | "<=" | ">" | ">=" ;
 
 /* Regole di produzione */
-<Program>::= <Statements> EOF
-<Statements>::= <Statement> SEMICOLON <Statements> | <Statement>
-<Statement>::= <CallRead> | <CallWrite> | <Assigment> | <IfThen> | <RepeatUntil>
-<CallWrite>::= WRITE (ID|NUMBER)
-<CalRead>::= READ (ID)
-<Assignment>::= ID ASSIGMENT <Expression>
-<Expression>::= <Expression> SUM_DIF <MulDivExpr> | <MulDivExpr>
-<MulDivExpr>::= <MulDivExpr> MUL_DIV <Factor> | <Factor>
-<Factor>::= ID | NUMBER | (LEF_PAR <Expression> RIGHT_PAR)
-<IfThen>::= IF <Condition> THEN <Statements> [ELSE <Statements>] END
-<Condition>::= <Expression> COMPARISON <Expression>
-<RepeatUntil>::= REPEAT <Statements> UNTIL <Condition>
+<Program>::= <Statements> EOF ;
+<Statements>::= <Statement> SEMICOLON <Statements> | <Statement> ;
+<Statement>::= <CallRead> | <CallWrite> | <Assigment> | <IfThen> | <RepeatUntil> ;
+<CallWrite>::= WRITE (ID|NUMBER) ;
+<CalRead>::= READ (ID) ;
+<Assignment>::= ID ASSIGMENT <Expression> ;
+<Expression>::= <Expression> SUM_DIF <MulDivExpr> | <MulDivExpr> ;
+<MulDivExpr>::= <MulDivExpr> MUL_DIV <Factor> | <Factor> ;
+<Factor>::= ID | NUMBER | (LEF_PAR <Expression> RIGHT_PAR) ;
+<IfThen>::= IF <Condition> THEN <Statements> [ELSE <Statements>] END ;
+<Condition>::= <Expression> COMPARISON <Expression> ;
+<RepeatUntil>::= REPEAT <Statements> UNTIL <Condition> ;
