@@ -1,40 +1,153 @@
 options {
-    Static = false;
+  STATIC = false;
 }
 
-PARSER_BEGIN(gParser)
-
-public class gParser {
-    public static void main(String[] args) throws ParseException, FileNotFoundException {
-        InputStream s;
-        if(args.length > 0){
-            String fileName = args[0];
-            s = new FileInputStream(args[0]);
-        } else {
-            System.out.println(args.length);
-            s = System.in;
-        }
-
-        gParserTokenManager tokenmanager = new gParserTokenManager(new SimpleCharStream(s));
-        Token token;
-
-        while ((token = tokenmanager.getNextToken()).kind != EOF) {
-            System.out.println("lessema: " + token.image + " --> Token associato: " + tokenImage[token.kind]);
-        }
-
+PARSER_BEGIN(Grammar)
+public class Grammar {
+  public static void main(String[] args) throws ParseException {
+    Grammar parser = new Grammar(System.in);
+    parser.Program();
+  }
 }
-
-PARSER_END(gParser)
+PARSER_END(Grammar)
 
 TOKEN : {
+  <ID : ["a"-"z", "A"-"Z"](["a"-"z", "A"-"Z", "0"-"9"])*>
 }
 
-TOKEN: {
-    <#LETTER: (["A"-"Z","a"-"z"]+)>
-    | <#NUMBA: (["0"-"9"]+)>
+TOKEN : {
+  <NUMBER : (["0"-"9"])+>
 }
 
-SKIP : {
-    < SKIPPED : [ " ", "\t", "\n", "\r"] >
-    | <COMMENT: "{" (~["}"])* "}">
+TOKEN : {
+  <SEMICOLON : ";">
 }
+
+TOKEN : {
+  <ASSIGNMENT : ":=">
+}
+
+TOKEN : {
+  <SUM_DIF : "+" | "-">
+}
+
+TOKEN : {
+  <MUL_DIV : "*" | "/">
+}
+
+TOKEN : {
+  <LEF_PAR : "(">
+}
+
+TOKEN : {
+  <RIGHT_PAR : ")">
+}
+
+TOKEN : {
+  <WRITE : "WRITE">
+}
+
+TOKEN : {
+  <READ : "READ">
+}
+
+TOKEN : {
+  <IF : "IF">
+}
+
+TOKEN : {
+  <THEN : "THEN">
+}
+
+TOKEN : {
+  <ELSE : "ELSE">
+}
+
+TOKEN : {
+  <END : "END">
+}
+
+TOKEN : {
+  <REPEAT : "REPEAT">
+}
+
+TOKEN : {
+  <UNTIL : "UNTIL">
+}
+
+TOKEN : {
+  <COMPARISON : "==" | "!=" | "<" | "<=" | ">" | ">=">
+}
+
+void Program() :
+{
+}
+{
+ Statements()}
+
+void Statements() :
+{
+}
+{
+ Statement() <SEMICOLON> Statements() Statement()}
+
+void Statement() :
+{
+}
+{
+ CallRead() CallWrite() Assignment() IfThen() RepeatUntil()}
+
+void CallWrite() :
+{
+}
+{
+ <WRITE> ( <ID> <NUMBER>)}
+
+void CallRead() :
+{
+}
+{
+ <READ> ( <ID>)}
+
+void Assignment() :
+{
+}
+{
+ <ID> <ASSIGNMENT> Expression()}
+
+void Expression() :
+{
+}
+{
+ Expression() <SUM_DIF> MulDivExpr() MulDivExpr()}
+
+void MulDivExpr() :
+{
+}
+{
+ MulDivExpr() <MUL_DIV> Factor() Factor()}
+
+void Factor() :
+{
+}
+{
+ <ID> <NUMBER> ( <LEF_PAR> Expression() <RIGHT_PAR>)}
+
+void IfThen() :
+{
+}
+{
+ <IF> Condition() <THEN> Statements() [ <ELSE> Statements()] <END>}
+
+void Condition() :
+{
+}
+{
+ Expression() <COMPARISON> Expression()}
+
+void RepeatUntil() :
+{
+}
+{
+ <REPEAT> Statements() <UNTIL> Condition()}
+
