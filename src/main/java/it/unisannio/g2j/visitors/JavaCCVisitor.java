@@ -1,19 +1,16 @@
-package it.unisannio.g2j;
+package it.unisannio.g2j.visitors;
 
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.tree.ParseTree;
+import it.unisannio.g2j.G2JBaseVisitor;
+import it.unisannio.g2j.G2JParser;
 
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
-public class JavaCCVisitor extends G2JBaseVisitor<Void>  {
+public class JavaCCVisitor extends G2JBaseVisitor<Void> {
 
     private Set<String> definedNonTerminals = new HashSet<>();
     private Set<String> definedTerminals = new HashSet<>();
@@ -26,14 +23,14 @@ public class JavaCCVisitor extends G2JBaseVisitor<Void>  {
         jjFileContent.append("options {\n");
         jjFileContent.append("  STATIC = false;\n");
         jjFileContent.append("}\n\n");
-        jjFileContent.append("PARSER_BEGIN(Grammar)\n");
-        jjFileContent.append("public class Grammar {\n");
+        jjFileContent.append("PARSER_BEGIN(GrammarOut)\n");
+        jjFileContent.append("public class GrammarOut {\n");
         jjFileContent.append("  public static void main(String[] args) throws ParseException {\n");
         jjFileContent.append("    Grammar parser = new Grammar(System.in);\n");
         jjFileContent.append("    parser.Program();\n");
         jjFileContent.append("  }\n");
         jjFileContent.append("}\n");
-        jjFileContent.append("PARSER_END(Grammar)\n\n");
+        jjFileContent.append("PARSER_END(GrammarOut)\n\n");
         return visitChildren(ctx);
     }
 
@@ -236,30 +233,6 @@ public class JavaCCVisitor extends G2JBaseVisitor<Void>  {
             jjFileContent.append("?");
         }
         return null;
-    }
-
-    public void checkSemantics() {
-        // Verifica che tutti i non terminali usati siano definiti
-        for (String nonTerminal : usedNonTerminals) {
-            if (!definedNonTerminals.contains(nonTerminal)) {
-                System.err.println("Errore semantico: Non terminale non definito - " + nonTerminal);
-            }
-        }
-
-        // Verifica che tutti i terminali usati siano definiti
-        for (String terminal : usedTerminals) {
-            if (!definedTerminals.contains(terminal)) {
-                System.err.println("Errore semantico: Terminale non definito - " + terminal);
-            }
-        }
-
-        // Verifica che non ci siano cicli nelle produzioni (questa è una versione semplificata)
-        // Una versione più completa richiederebbe un'analisi più approfondita delle dipendenze
-        for (String nonTerminal : definedNonTerminals) {
-            if (usedNonTerminals.contains(nonTerminal)) {
-                System.err.println("Avviso: Possibile ciclo nelle produzioni per - " + nonTerminal);
-            }
-        }
     }
 
     public void writeOutputToFile(String fileName) {

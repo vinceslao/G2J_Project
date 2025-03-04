@@ -2,14 +2,14 @@ options {
   STATIC = false;
 }
 
-PARSER_BEGIN(Grammar)
-public class Grammar {
+PARSER_BEGIN(GrammarOut)
+public class GrammarOut {
   public static void main(String[] args) throws ParseException {
     Grammar parser = new Grammar(System.in);
     parser.Program();
   }
 }
-PARSER_END(Grammar)
+PARSER_END(GrammarOut)
 
 TOKEN : {
   <ID : ["a"-"z", "A"-"Z"](["a"-"z", "A"-"Z", "0"-"9"])*>

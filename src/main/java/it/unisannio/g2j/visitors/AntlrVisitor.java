@@ -1,6 +1,8 @@
-package it.unisannio.g2j;
+package it.unisannio.g2j.visitors;
 
-import org.antlr.v4.runtime.tree.ParseTree;
+import it.unisannio.g2j.G2JBaseVisitor;
+import it.unisannio.g2j.G2JParser;
+
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 
@@ -10,7 +12,7 @@ public class AntlrVisitor extends G2JBaseVisitor<Void> {
 
     @Override
     public Void visitGrammarFile(G2JParser.GrammarFileContext ctx) {
-        g4FileContent.append("grammar Grammar;\n\n");
+        g4FileContent.append("grammar GrammarOut;\n\n");
         return visitChildren(ctx);
     }
 

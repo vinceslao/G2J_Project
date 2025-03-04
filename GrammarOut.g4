@@ -1,4 +1,4 @@
-grammar Grammar;
+grammar GrammarOut;
 
 ID : [a-zA-Z][a-zA-Z0-9]*;
 NUMBER : [0-9]+;
