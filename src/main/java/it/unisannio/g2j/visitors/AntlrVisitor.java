@@ -67,8 +67,6 @@ public class AntlrVisitor extends G2JBaseVisitor<Void> {
         } else if (ctx.TERM() != null) {
             String terminal = ctx.TERM().getText();
             g4FileContent.append(terminal).append(" ");
-        } else if (ctx.STRING() != null) {
-            g4FileContent.append(ctx.STRING().getText()).append(" ");
         } else if (ctx.grouping() != null || ctx.optionality() != null || ctx.repetivity() != null) {
             visitChildren(ctx);
         }
@@ -146,7 +144,8 @@ public class AntlrVisitor extends G2JBaseVisitor<Void> {
             visit(ctx.regex());
             g4FileContent.append(")");
         } else if (ctx.STRING() != null) {
-            g4FileContent.append(ctx.STRING().getText());
+            String literal = ctx.STRING().getText().replace("\"", "'"); // Sostituisci " con '
+            g4FileContent.append(literal).append(" ");
         }
         return null;
     }

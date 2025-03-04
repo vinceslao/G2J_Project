@@ -62,8 +62,6 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
             String terminal = ctx.TERM().getText();
             usedTerminals.add(terminal);
             System.out.println("Visiting Terminal: " + terminal);
-        } else if (ctx.STRING() != null) {
-            System.out.println("Visiting String: " + ctx.STRING().getText());
         }
         return visitChildren(ctx);
     }

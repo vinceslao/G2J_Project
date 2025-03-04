@@ -86,8 +86,6 @@ public class JavaCCVisitor extends G2JBaseVisitor<Void> {
             String terminal = ctx.TERM().getText();
             usedTerminals.add(terminal);
             jjFileContent.append(" <").append(terminal).append(">");
-        } else if (ctx.STRING() != null) {
-            jjFileContent.append(" ").append(ctx.STRING().getText());
         } else if (ctx.grouping() != null) {
             visit(ctx.grouping());
         } else if (ctx.optionality() != null) {
@@ -155,33 +153,6 @@ public class JavaCCVisitor extends G2JBaseVisitor<Void> {
         return null;
     }
 
-    @Override
-    public Void visitPrimary(G2JParser.PrimaryContext ctx) {
-        if (ctx.CHAR() != null) {
-            jjFileContent.append("\"").append(ctx.CHAR().getText()).append("\"");
-
-        } else if (ctx.ESCAPED_CHAR() != null) {
-            jjFileContent.append(ctx.ESCAPED_CHAR().getText());
-
-        } else if (ctx.DOT() != null) {
-            jjFileContent.append(".");
-
-        } else if (ctx.CHAR_CLASS() != null) {
-            // La classe di caratteri (CHAR_CLASSES) viene trasformata nel formato ["a"-"z", "A"-"Z"]
-            String charClass = ctx.CHAR_CLASS().getText();
-            jjFileContent.append(convertCharClass(charClass));
-
-        } else if (ctx.LEFT_ROUND_BRACKET() != null) {
-            jjFileContent.append("(");
-            visit(ctx.regex());
-            jjFileContent.append(")");
-
-        } else if (ctx.STRING() != null) {
-            jjFileContent.append(ctx.STRING().getText());
-        }
-        return null;
-    }
-
     /**
      * Converte una classe di caratteri (es. [a-zA-Z]) nel formato ["a"-"z", "A"-"Z"].
      */
@@ -231,6 +202,33 @@ public class JavaCCVisitor extends G2JBaseVisitor<Void> {
             jjFileContent.append("+");
         } else if (ctx.OPTIONALITY() != null) {
             jjFileContent.append("?");
+        }
+        return null;
+    }
+
+    @Override
+    public Void visitPrimary(G2JParser.PrimaryContext ctx) {
+        if (ctx.CHAR() != null) {
+            jjFileContent.append("\"").append(ctx.CHAR().getText()).append("\"");
+
+        } else if (ctx.ESCAPED_CHAR() != null) {
+            jjFileContent.append(ctx.ESCAPED_CHAR().getText());
+
+        } else if (ctx.DOT() != null) {
+            jjFileContent.append(".");
+
+        } else if (ctx.CHAR_CLASS() != null) {
+            // La classe di caratteri (CHAR_CLASSES) viene trasformata nel formato ["a"-"z", "A"-"Z"]
+            String charClass = ctx.CHAR_CLASS().getText();
+            jjFileContent.append(convertCharClass(charClass));
+
+        } else if (ctx.LEFT_ROUND_BRACKET() != null) {
+            jjFileContent.append("(");
+            visit(ctx.regex());
+            jjFileContent.append(")");
+
+        } else if (ctx.STRING() != null) {
+            jjFileContent.append(ctx.STRING().getText());
         }
         return null;
     }

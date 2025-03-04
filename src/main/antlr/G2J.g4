@@ -25,7 +25,7 @@ productionList: production (PIPE production)*;
 production: element+ ;
 
 // Elemento di una produzione
-element: NON_TERM | TERM | STRING | PIPE | grouping | optionality | repetivity;
+element: NON_TERM | TERM | PIPE | grouping | optionality | repetivity;
 
 grouping: LEFT_ROUND_BRACKET production RIGHT_ROUND_BRACKET ;
 
