@@ -28,6 +28,10 @@ TOKEN : {
 }
 
 TOKEN : {
+  <SUM_DIF : "+" | "-">
+}
+
+TOKEN : {
   <MUL_DIV : "*" | "/">
 }
 

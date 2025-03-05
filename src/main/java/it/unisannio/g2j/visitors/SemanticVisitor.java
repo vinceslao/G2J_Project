@@ -2,6 +2,7 @@ package it.unisannio.g2j.visitors;
 
 import it.unisannio.g2j.G2JBaseVisitor;
 import it.unisannio.g2j.G2JParser;
+import it.unisannio.g2j.exceptions.SemanticException;
 
 import java.util.*;
 
@@ -102,23 +103,91 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
         return visitChildren(ctx);
     }
 
-    public void checkSemantics() {
 
-        // 1. Verifica che tutti i non terminali usati siano definiti
+    // ==================== Metodi di Analisi Semantica ====================
+
+    public void checkSemantics() {
+        try {
+            checkNotUsedNonTerminals();
+            checkNotUsedTerminals();
+            checkLeftRecursion();
+            checkUnreachableProductions();
+        }catch(SemanticException e) {
+            System.err.println("❌ Catturata eccezione di tipo SemanticException 😡");
+            System.err.println(e.getMessage());
+            System.exit(1);
+        }
+    }
+
+    /**
+     *  1. Verifica che tutti i non terminali usati siano definiti
+     */
+    private void checkNotUsedNonTerminals() {
         for (String nonTerminal : usedNonTerminals) {
             if (!definedNonTerminals.contains(nonTerminal)) {
-                System.err.println("Errore semantico: Non terminale non definito - " + nonTerminal);
+                throw new SemanticException("Errore semantico: Non terminale non definito - " + nonTerminal);
             }
         }
+    }
 
-        // 2. Verifica che tutti i terminali usati siano definiti
+    /**
+     * 2. Verifica che tutti i terminali usati siano definiti
+     */
+    private void checkNotUsedTerminals() {
         for (String terminal : usedTerminals) {
             if (!definedTerminals.contains(terminal)) {
-                System.err.println("Errore semantico: Terminale non definito - " + terminal);
+                throw new SemanticException("Errore semantico: Terminal non definito - " + terminal);
             }
         }
+    }
 
+    /**
+     * 3. Verifica ricorsione sinistra
+     */
+    private void checkLeftRecursion() {
+        for (String nonTerminal : definedNonTerminals) {
+            if (isLeftRecursive(nonTerminal)) {
+                throw new SemanticException("Errore semantico: Ricorsione sinistra rilevata per - " + nonTerminal);
+            }
+        }
+    }
 
+    private boolean isLeftRecursive(String nonTerminal) {
+        for (List<String> production : productions.get(nonTerminal)) {
+            if (!production.isEmpty() && production.get(0).equals(nonTerminal)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
+    /**
+     * 4. Verifica produzioni non raggiungibili
+     */
+    private void checkUnreachableProductions() {
+        Set<String> reachable = new HashSet<>();
+        reachable.add("<Program>");
+
+        boolean changed;
+        do {
+            changed = false;
+            Set<String> reachableCopy = new HashSet<>(reachable); // Copia temporanea
+            for (String nonTerminal : reachableCopy) {
+                for (List<String> production : productions.get(nonTerminal)) {
+                    for (String symbol : production) {
+                        if (definedNonTerminals.contains(symbol) && !reachable.contains(symbol)) {
+                            reachable.add(symbol); // Modifica il Set `reachable`
+                            changed = true;
+                        }
+                    }
+                }
+            }
+        } while (changed);
+
+        for (String nonTerminal : definedNonTerminals) {
+            if (!reachable.contains(nonTerminal)) {
+                throw new SemanticException("Errore semantico: Produzione non raggiungibile - " + nonTerminal);
+            }
+        }
     }
 }

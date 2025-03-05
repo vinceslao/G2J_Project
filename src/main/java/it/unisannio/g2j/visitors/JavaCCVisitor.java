@@ -236,7 +236,7 @@ public class JavaCCVisitor extends G2JBaseVisitor<Void> {
     public void writeOutputToFile(String fileName) {
         try (OutputStream outputStream = new FileOutputStream(fileName)) {
             outputStream.write(jjFileContent.toString().getBytes(StandardCharsets.UTF_8));
-            System.out.println("File " + fileName + " generato con successo.");
+            System.out.println("✅ File " + fileName + " generato con successo.");
         } catch (Exception e) {
             System.err.println("Errore durante la scrittura del file " + fileName + ": " + e.getMessage());
         }

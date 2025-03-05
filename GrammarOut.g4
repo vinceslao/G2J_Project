@@ -4,6 +4,7 @@ ID : [a-zA-Z][a-zA-Z0-9]*;
 NUMBER : [0-9]+;
 SEMICOLON : ';' ;
 ASSIGNMENT : ':=' ;
+SUM_DIF : '+'  | '-' ;
 MUL_DIV : '*'  | '/' ;
 LEF_PAR : '(' ;
 RIGHT_PAR : ')' ;
