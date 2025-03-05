@@ -1,4 +1,4 @@
-/* Input in notazione BNF */
+/* Input in notazione EBNF */
 
 /* Token */
 ID            ::= [a-zA-Z][a-zA-Z0-9]* ;
@@ -23,7 +23,7 @@ COMPARISON    ::= "==" | "!=" | "<" | "<=" | ">" | ">=" ;
 <Program>::= <Statements> EOF ;
 <Statements>::= <Statement> SEMICOLON <Statements> | <Statement> ;
 <Statement>::= <CallRead> | <CallWrite> | <Assignment> | <IfThen> | <RepeatUntil> ;
-<CallWrite>::= WRITE (ID|NUMBER) ;
+<CallWrite>::= WRITE (ID|NUMBER);
 <CallRead>::= READ (ID) ;
 <Assignment>::= ID ASSIGNMENT <Expression> ;
 <Expression>::= <Expression> SUM_DIF <MulDivExpr> | <MulDivExpr> ;
