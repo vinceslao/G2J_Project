@@ -67,7 +67,7 @@ public class AntlrVisitor extends G2JBaseVisitor<Void> {
         } else if (ctx.TERM() != null) {
             String terminal = ctx.TERM().getText();
             g4FileContent.append(terminal).append(" ");
-        } else if (ctx.grouping() != null || ctx.optionality() != null || ctx.repetivity() != null) {
+        }else if (ctx.grouping() != null || ctx.optionality() != null || ctx.repetivity() != null) {
             visitChildren(ctx);
         }
         return null;

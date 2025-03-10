@@ -52,31 +52,32 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
     }
 
     private void visitProduction(G2JParser.ProductionContext ctx, List<String> elements) {
+        System.out.println("Visiting production: " + ctx.getText());
         for (G2JParser.ElementContext element : ctx.element()) {
-            visitElement(element, elements); // Visita ogni elemento della produzione
+            visitElement(element, elements);
         }
+        System.out.println("Elements: " + elements);
     }
 
     private void visitElement(G2JParser.ElementContext ctx, List<String> elements) {
         if (ctx.NON_TERM() != null) {
-            String nonTerminal = ctx.NON_TERM().getText();
-            usedNonTerminals.add(nonTerminal);
-            elements.add(nonTerminal); // Aggiunge il non terminale alla produzione
-            System.out.println("Visiting Non-Terminal: " + nonTerminal);
+            elements.add(ctx.NON_TERM().getText());
         } else if (ctx.TERM() != null && !Objects.equals(ctx.TERM().getText(), "EOF")) {
-            String terminal = ctx.TERM().getText();
-            usedTerminals.add(terminal);
-            elements.add(terminal); // Aggiunge il terminale alla produzione
-            System.out.println("Visiting Terminal: " + terminal);
+            elements.add(ctx.TERM().getText());
         } else if (ctx.grouping() != null) {
-            visitGrouping(ctx.grouping(), elements); // Gestisce i raggruppamenti
+            elements.add("(");
+            visitProduction(ctx.grouping().production(), elements);
+            elements.add(")");
         } else if (ctx.optionality() != null) {
-            visitOptionality(ctx.optionality(), elements); // Gestisce le opzionalità
+            elements.add("[");
+            visitProduction(ctx.optionality().production(), elements);
+            elements.add("]");
         } else if (ctx.repetivity() != null) {
-            visitRepetivity(ctx.repetivity(), elements); // Gestisce le ripetizioni
+            elements.add("{");
+            visitProduction(ctx.repetivity().production(), elements);
+            elements.add("}");
         }
     }
-
     private void visitGrouping(G2JParser.GroupingContext ctx, List<String> elements) {
         elements.add("("); // Apre il raggruppamento
         visitProduction(ctx.production(), elements); // Visita la produzione interna
@@ -147,6 +148,8 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
     private void checkLeftRecursion() {
         for (String nonTerminal : definedNonTerminals) {
             if (isLeftRecursive(nonTerminal)) {
+                System.out.println("\n\n⚠️ Attenzione: Ricorsione sinistra rilevata per - " + nonTerminal);
+                suggestLeftRecursionElimination(nonTerminal);
                 throw new SemanticException("Errore semantico: Ricorsione sinistra rilevata per - " + nonTerminal);
             }
         }
@@ -190,4 +193,64 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
             }
         }
     }
+
+
+    // ==================== OTTIMIZZAZIONI ====================
+
+    private void suggestLeftRecursionElimination(String nonTerminal) {
+        // Trova tutte le produzioni con ricorsione sinistra
+        List<List<String>> leftRecursiveProductions = new ArrayList<>();
+        List<List<String>> nonLeftRecursiveProductions = new ArrayList<>();
+
+        for (List<String> production : productions.get(nonTerminal)) {
+            if (!production.isEmpty() && production.get(0).equals(nonTerminal)) {
+                leftRecursiveProductions.add(production);
+            } else {
+                nonLeftRecursiveProductions.add(production);
+            }
+        }
+
+        if (!leftRecursiveProductions.isEmpty()) {
+            // Stampa la regola originale
+            System.out.println("\nRegola che contiene la ricorsione a sinistra:");
+            System.out.print(nonTerminal + " ::= ");
+            for (int i = 0; i < productions.get(nonTerminal).size(); i++) {
+                List<String> production = productions.get(nonTerminal).get(i);
+                System.out.print(String.join(" ", production));
+                if (i < productions.get(nonTerminal).size() - 1) {
+                    System.out.print(" | ");
+                }
+            }
+            System.out.println(" ;");
+
+            // Suggerimento per eliminare la ricorsione sinistra
+            System.out.println("\nSuggerimento per eliminare la ricorsione sinistra:");
+
+            // Crea un nuovo non terminale per gestire la ricorsione
+            String newNonTerminal = nonTerminal.replace(">", "Tail>"); // Esempio: <Expression> -> <ExpressionTail>
+
+            // Se ci sono produzioni non ricorsive a sinistra, usale
+            if (!nonLeftRecursiveProductions.isEmpty()) {
+                System.out.println(nonTerminal + " ::= " + String.join(" ", nonLeftRecursiveProductions.get(0)) + " " + newNonTerminal + " ;");
+            } else {
+                // Se non ci sono produzioni non ricorsive, usa una produzione vuota
+                System.out.println(nonTerminal + " ::= " + newNonTerminal + " ;");
+            }
+
+            // Aggiungi le produzioni per il nuovo non terminale
+            System.out.print(newNonTerminal + " ::= ");
+            for (int i = 0; i < leftRecursiveProductions.size(); i++) {
+                List<String> production = leftRecursiveProductions.get(i);
+                // Rimuovi il primo elemento (il non terminale ricorsivo)
+                List<String> newProduction = new ArrayList<>(production.subList(1, production.size()));
+                System.out.print(String.join(" ", newProduction) + " " + newNonTerminal);
+                if (i < leftRecursiveProductions.size() - 1) {
+                    System.out.print(" | ");
+                }
+            }
+            System.out.println(" | ε ;");
+            System.out.println("\n");
+        }
+    }
+
 }

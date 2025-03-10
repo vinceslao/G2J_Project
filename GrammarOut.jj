@@ -64,10 +64,6 @@ TOKEN : {
 }
 
 TOKEN : {
-  <END : "END">
-}
-
-TOKEN : {
   <REPEAT : "REPEAT">
 }
 
@@ -89,25 +85,30 @@ void Statements() :
 {
 }
 {
- Statement() <SEMICOLON> Statements() Statement()}
+ Statement() <SEMICOLON> Statements() |
+ Statement()}
 
 void Statement() :
 {
 }
 {
- CallRead() CallWrite() Assignment() IfThen() RepeatUntil()}
+ CallRead() |
+ CallWrite() |
+ Assignment() |
+ IfThen() |
+ RepeatUntil()}
 
 void CallWrite() :
 {
 }
 {
- <WRITE> ( <ID> <NUMBER>)}
+ <WRITE> <LEF_PAR> <ID> <RIGHT_PAR>}
 
 void CallRead() :
 {
 }
 {
- <READ> ( <ID>)}
+ <READ> <LEF_PAR> <ID> <RIGHT_PAR>}
 
 void Assignment() :
 {
@@ -119,25 +120,29 @@ void Expression() :
 {
 }
 {
- Expression() <SUM_DIF> MulDivExpr() MulDivExpr()}
+ Expression() <SUM_DIF> MulDivExpr() |
+ MulDivExpr()}
 
 void MulDivExpr() :
 {
 }
 {
- MulDivExpr() <MUL_DIV> Factor() Factor()}
+ MulDivExpr() <MUL_DIV> Factor() |
+ Factor()}
 
 void Factor() :
 {
 }
 {
- <ID> <NUMBER> ( <LEF_PAR> Expression() <RIGHT_PAR>)}
+ <ID> |
+ <NUMBER> |
+ ( <LEF_PAR> Expression() <RIGHT_PAR>)}
 
 void IfThen() :
 {
 }
 {
- <IF> Condition() <THEN> Statements() [ <ELSE> Statements()] <END>}
+ <IF> Condition() <THEN> Statements() [ <ELSE> Statements()]}
 
 void Condition() :
 {
