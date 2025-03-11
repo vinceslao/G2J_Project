@@ -25,7 +25,6 @@ public class Main {
         semanticVisitor.visit(tree);
         semanticVisitor.checkSemantics();
 
-
         // Genera il file .jj (JavaCC)
         JavaCCVisitor javaCCVisitor = new JavaCCVisitor();
         javaCCVisitor.visit(tree);

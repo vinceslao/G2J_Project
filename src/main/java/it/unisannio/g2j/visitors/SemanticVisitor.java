@@ -42,13 +42,12 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
         return null;
     }
 
-    private Void visitProductionList(G2JParser.ProductionListContext ctx, String currentNonTerminal) {
+    private void visitProductionList(G2JParser.ProductionListContext ctx, String currentNonTerminal) {
         for (G2JParser.ProductionContext production : ctx.production()) {
             List<String> elements = new ArrayList<>();
             visitProduction(production, elements); // Visita la produzione e raccoglie gli elementi
             productions.get(currentNonTerminal).add(elements); // Aggiunge la produzione al non terminale corrente
         }
-        return null;
     }
 
     private void visitProduction(G2JParser.ProductionContext ctx, List<String> elements) {
@@ -62,8 +61,10 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
     private void visitElement(G2JParser.ElementContext ctx, List<String> elements) {
         if (ctx.NON_TERM() != null) {
             elements.add(ctx.NON_TERM().getText());
+            usedNonTerminals.add(ctx.NON_TERM().getText());
         } else if (ctx.TERM() != null && !Objects.equals(ctx.TERM().getText(), "EOF")) {
             elements.add(ctx.TERM().getText());
+            usedTerminals.add(ctx.TERM().getText());
         } else if (ctx.grouping() != null) {
             elements.add("(");
             visitProduction(ctx.grouping().production(), elements);
@@ -113,10 +114,11 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
             checkNotUsedTerminals();
             checkLeftRecursion();
             checkUnreachableProductions();
+            checkCommonPrefixes();
         }catch(SemanticException e) {
             System.err.println("❌ Catturata eccezione di tipo SemanticException 😡");
             System.err.println(e.getMessage());
-            System.exit(1);
+        //    System.exit(1);
         }
     }
 
@@ -137,7 +139,7 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
     private void checkNotUsedTerminals() {
         for (String terminal : usedTerminals) {
             if (!definedTerminals.contains(terminal)) {
-                throw new SemanticException("Errore semantico: Terminal non definito - " + terminal);
+                throw new SemanticException("Errore semantico: Terminale non definito - " + terminal);
             }
         }
     }
@@ -150,7 +152,7 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
             if (isLeftRecursive(nonTerminal)) {
                 System.out.println("\n\n⚠️ Attenzione: Ricorsione sinistra rilevata per - " + nonTerminal);
                 suggestLeftRecursionElimination(nonTerminal);
-                throw new SemanticException("Errore semantico: Ricorsione sinistra rilevata per - " + nonTerminal);
+            //    throw new SemanticException("Errore semantico: Ricorsione sinistra rilevata per - " + nonTerminal);
             }
         }
     }
@@ -189,14 +191,81 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
 
         for (String nonTerminal : definedNonTerminals) {
             if (!reachable.contains(nonTerminal)) {
-                throw new SemanticException("Errore semantico: Produzione non raggiungibile - " + nonTerminal);
+        //        throw new SemanticException("Errore semantico: Produzione non raggiungibile - " + nonTerminal);
             }
         }
+    }
+
+    /**
+     * 5. Verifica prefissi comuni e suggerisce la fattorizzazione
+     */
+    private void checkCommonPrefixes() {
+        for (String nonTerminal : definedNonTerminals) {
+            List<List<String>> productionsForNT = productions.get(nonTerminal);
+            if (productionsForNT.size() > 1) {
+                // Trova il prefisso comune più lungo tra tutte le produzioni
+                List<String> commonPrefix = findLongestCommonPrefix(productionsForNT);
+
+                if (!commonPrefix.isEmpty()) {
+                    System.out.println("\n⚠️ Prefisso comune rilevato per: " + nonTerminal);
+                    System.out.println("Regola originale:");
+                    System.out.print(nonTerminal + " ::= ");
+                    for (int i = 0; i < productionsForNT.size(); i++) {
+                        System.out.print(String.join(" ", productionsForNT.get(i)));
+                        if (i < productionsForNT.size() - 1) {
+                            System.out.print(" | ");
+                        }
+                    }
+                    System.out.println(" ;");
+
+                    // Suggerimento per la fattorizzazione
+                    suggestFactorization(nonTerminal, commonPrefix, productionsForNT);
+                }
+            }
+        }
+    }
+
+    /**
+     * Trova il prefisso comune più lungo tra una lista di produzioni
+     */
+    private List<String> findLongestCommonPrefix(List<List<String>> productions) {
+        if (productions.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<String> commonPrefix = new ArrayList<>(productions.get(0));
+        for (List<String> production : productions) {
+            commonPrefix = getCommonPrefix(commonPrefix, production);
+            if (commonPrefix.isEmpty()) {
+                break;
+            }
+        }
+        return commonPrefix;
+    }
+
+    /**
+     * Trova il prefisso comune tra due liste
+     */
+    private List<String> getCommonPrefix(List<String> list1, List<String> list2) {
+        List<String> prefix = new ArrayList<>();
+        int minLength = Math.min(list1.size(), list2.size());
+        for (int i = 0; i < minLength; i++) {
+            if (list1.get(i).equals(list2.get(i))) {
+                prefix.add(list1.get(i));
+            } else {
+                break;
+            }
+        }
+        return prefix;
     }
 
 
     // ==================== OTTIMIZZAZIONI ====================
 
+
+    /**
+     * 1. Eliminazione della ricorsione a sinistra
+     */
     private void suggestLeftRecursionElimination(String nonTerminal) {
         // Trova tutte le produzioni con ricorsione sinistra
         List<List<String>> leftRecursiveProductions = new ArrayList<>();
@@ -251,6 +320,36 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
             System.out.println(" | ε ;");
             System.out.println("\n");
         }
+    }
+
+    /**
+     * 2. Fattorizzazione a prefisso comune
+     */
+    private void suggestFactorization(String nonTerminal, List<String> commonPrefix, List<List<String>> productionsForNT) {
+        System.out.println("\nSuggerimento per la fattorizzazione:");
+
+        // Crea un nuovo non terminale per gestire la parte rimanente
+        String newNonTerminal = nonTerminal.replace(">", "Suffix>"); // Esempio: <Expression> -> <ExpressionSuffix>
+
+        // Stampa la nuova produzione fattorizzata
+        System.out.print(nonTerminal + " ::= ");
+        System.out.print(String.join(" ", commonPrefix) + " " + newNonTerminal + " ;\n");
+
+        // Stampa le produzioni per il nuovo non terminale
+        System.out.print(newNonTerminal + " ::= ");
+        for (int i = 0; i < productionsForNT.size(); i++) {
+            List<String> production = productionsForNT.get(i);
+            if (production.size() > commonPrefix.size()) {
+                List<String> suffix = production.subList(commonPrefix.size(), production.size());
+                System.out.print(String.join(" ", suffix));
+            } else {
+                System.out.print("ε"); // Se non c'è suffisso, usa la stringa vuota
+            }
+            if (i < productionsForNT.size() - 1) {
+                System.out.print(" | ");
+            }
+        }
+        System.out.println(" ;\n");
     }
 
 }
