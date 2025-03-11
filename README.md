@@ -97,11 +97,7 @@ Se desideri contribuire al progetto, segui questi passaggi:
 4. Push del branch (`git push origin feature/nuova-funzionalita`).
 5. Apri una Pull Request.
 
-## Licenza
-
-Questo progetto è rilasciato sotto la licenza MIT. Vedi il file [LICENSE](LICENSE) per ulteriori dettagli.
-
-## Autore
+## Autori
 
 - [Concia Gianvincenzo](https://github.com/vinceslao)
 - [Orlando Vittoria](https://github.com/v-orlando)
