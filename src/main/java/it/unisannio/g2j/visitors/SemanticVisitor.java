@@ -25,6 +25,7 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
 
     private List<String> orderedNonTerminals = new ArrayList<>();
 
+
     @Override
     public Void visitGrammarFile(G2JParser.GrammarFileContext ctx) {
         System.out.println("Visiting Grammar File");
@@ -148,6 +149,7 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
         } catch(SemanticException e) {
             System.err.println("❌ Catturata eccezione di tipo SemanticException 😡");
             System.err.println(e.getMessage());
+            System.exit(1);
         }
     }
 
@@ -224,7 +226,7 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
         }
     }
 
-    // ==================== OTTIMIZZAZIONI ====================
+    // ============================== OTTIMIZZAZIONI =================================
 
     /**
      * 1. Eliminazione della ricorsione sinistra
@@ -439,6 +441,10 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
         }
         return prefix;
     }
+
+
+
+    // ============================== COSTRUZIONE FILE DI INPUT OTTIMIZZATO ===================================
 
     /**
      * Formatta una lista di produzioni in una stringa per la visualizzazione
