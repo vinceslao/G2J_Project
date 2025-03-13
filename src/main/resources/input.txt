@@ -28,6 +28,6 @@ COMPARISON    ::= "==" | "!=" | "<" | "<=" | ">" | ">=" ;
 <Expression>::= <Expression> SUM_DIF <MulDivExpr> | <MulDivExpr> ;
 <MulDivExpr>::= <MulDivExpr> MUL_DIV <Factor> | <Factor> ;
 <Factor>::= ID | NUMBER | (LEF_PAR <Expression> RIGHT_PAR) ;
-<IfThen>::= IF <Condition> THEN <Statements> | IF <Condition> THEN <Statements> ELSE <Statements> ;
+<IfThen>::= IF <Condition> THEN <Statements> | IF <Condition> THEN <Statements> ELSE <Statements>
 <Condition>::= <Expression> COMPARISON <Expression> ;
 <RepeatUntil>::= REPEAT <Statements> UNTIL <Condition> ;

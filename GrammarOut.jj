@@ -98,6 +98,12 @@ void Statement() :
  IfThen() |
  RepeatUntil()}
 
+void CallWrite() :
+{
+}
+{
+ <WRITE> <LEF_PAR> <ID> <RIGHT_PAR>}
+
 void CallRead() :
 {
 }
@@ -137,13 +143,7 @@ void IfThen() :
 }
 {
  <IF> Condition() <THEN> Statements() |
- <IF> Condition() <THEN> Statements() <ELSE> Statements()}
-
-void Condition() :
-{
-}
-{
- Expression() <COMPARISON> Expression()}
+ <IF> Condition() <THEN> Statements() <ELSE> Statements() Condition()}
 
 void RepeatUntil() :
 {

@@ -28,7 +28,7 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
 
     @Override
     public Void visitRule(G2JParser.RuleContext ctx) {
-        System.out.println("Visiting Rule");
+        System.out.println("\nVisiting Rule");
         return visitChildren(ctx);
     }
 
@@ -191,14 +191,14 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
 
         for (String nonTerminal : definedNonTerminals) {
             if (!reachable.contains(nonTerminal)) {
-        //        throw new SemanticException("Errore semantico: Produzione non raggiungibile - " + nonTerminal);
+                throw new SemanticException("Errore semantico: Produzione non raggiungibile - " + nonTerminal);
             }
         }
     }
 
     /**
      * 5. Verifica prefissi comuni e suggerisce la fattorizzazione
-     */
+    */
     private void checkCommonPrefixes() {
         for (String nonTerminal : definedNonTerminals) {
             List<List<String>> productionsForNT = productions.get(nonTerminal);
@@ -292,7 +292,7 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
             }
             System.out.println(" ;");
 
-            // Suggerimento per eliminare la ricorsione sinistra
+            // Suggerimento per eliminare la ricorsione sinistra con notazione EBNF opzionale
             System.out.println("\nSuggerimento per eliminare la ricorsione sinistra:");
 
             // Crea un nuovo non terminale per gestire la ricorsione
@@ -300,56 +300,57 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
 
             // Se ci sono produzioni non ricorsive a sinistra, usale
             if (!nonLeftRecursiveProductions.isEmpty()) {
-                System.out.println(nonTerminal + " ::= " + String.join(" ", nonLeftRecursiveProductions.get(0)) + " " + newNonTerminal + " ;");
+                System.out.println(nonTerminal + " ::= " + String.join(" ", nonLeftRecursiveProductions.get(0)) + " [" + newNonTerminal + "] ;");
             } else {
                 // Se non ci sono produzioni non ricorsive, usa una produzione vuota
-                System.out.println(nonTerminal + " ::= " + newNonTerminal + " ;");
+                System.out.println(nonTerminal + " ::= [" + newNonTerminal + "] ;");
             }
 
             // Aggiungi le produzioni per il nuovo non terminale
             System.out.print(newNonTerminal + " ::= ");
             for (int i = 0; i < leftRecursiveProductions.size(); i++) {
                 List<String> production = leftRecursiveProductions.get(i);
-                // Rimuovi il primo elemento (il non terminale ricorsivo)
+
+                // Creiamo una subList per rimuovere il primo elemento ricorsivo
                 List<String> newProduction = new ArrayList<>(production.subList(1, production.size()));
-                System.out.print(String.join(" ", newProduction) + " " + newNonTerminal);
+                System.out.print(String.join(" ", newProduction) + " [" + newNonTerminal + "]");
+
+                // Caso in cui ci sono più produzioni
                 if (i < leftRecursiveProductions.size() - 1) {
                     System.out.print(" | ");
                 }
             }
-            System.out.println(" | ε ;");
-            System.out.println("\n");
+            System.out.println(" ;");
         }
     }
 
     /**
      * 2. Fattorizzazione a prefisso comune
-     */
+    */
     private void suggestFactorization(String nonTerminal, List<String> commonPrefix, List<List<String>> productionsForNT) {
         System.out.println("\nSuggerimento per la fattorizzazione:");
 
         // Crea un nuovo non terminale per gestire la parte rimanente
-        String newNonTerminal = nonTerminal.replace(">", "Suffix>"); // Esempio: <Expression> -> <ExpressionSuffix>
+        String newNonTerminal = nonTerminal.replace(">", "Suffix>"); // Esempio: <IfThen> -> <IfThenSuffix>
 
         // Stampa la nuova produzione fattorizzata
         System.out.print(nonTerminal + " ::= ");
-        System.out.print(String.join(" ", commonPrefix) + " " + newNonTerminal + " ;\n");
+        System.out.print(String.join(" ", commonPrefix) + " [" + newNonTerminal + "]" + " ;\n");
 
         // Stampa le produzioni per il nuovo non terminale
         System.out.print(newNonTerminal + " ::= ");
+        boolean firstSuffix = true; // Flag per gestire la prima produzione
         for (int i = 0; i < productionsForNT.size(); i++) {
             List<String> production = productionsForNT.get(i);
             if (production.size() > commonPrefix.size()) {
                 List<String> suffix = production.subList(commonPrefix.size(), production.size());
+                if (!firstSuffix) {
+                    System.out.print(" | "); // Aggiungi la barra verticale solo se non è la prima produzione
+                }
                 System.out.print(String.join(" ", suffix));
-            } else {
-                System.out.print("ε"); // Se non c'è suffisso, usa la stringa vuota
-            }
-            if (i < productionsForNT.size() - 1) {
-                System.out.print(" | ");
+                firstSuffix = false; // Dopo la prima produzione, il flag diventa false
             }
         }
         System.out.println(" ;\n");
     }
-
 }

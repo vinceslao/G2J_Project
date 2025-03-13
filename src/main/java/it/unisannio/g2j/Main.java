@@ -1,5 +1,6 @@
 package it.unisannio.g2j;
 
+import it.unisannio.g2j.errors.CustomErrorListener;
 import it.unisannio.g2j.visitors.AntlrVisitor;
 import it.unisannio.g2j.visitors.JavaCCVisitor;
 import it.unisannio.g2j.visitors.SemanticVisitor;
@@ -18,19 +19,29 @@ public class Main {
         CommonTokenStream tokens = new CommonTokenStream(lexer);
         G2JParser parser = new G2JParser(tokens);
 
+        // Rimuovi gli error listener di default e aggiungi il CustomErrorListener
+        parser.removeErrorListeners();
+        parser.addErrorListener(new CustomErrorListener());
+
+        // Esegui il parsing
         ParseTree tree = parser.grammarFile();
+
+        if (parser.getNumberOfSyntaxErrors() > 0) {
+            System.err.println("Numero errori sintattici: "+parser.getNumberOfSyntaxErrors());
+            System.err.println("Rilevato un errore sintattico, quindi analisi interrotta.");
+            return;
+        }
 
         // Analisi semantica
         SemanticVisitor semanticVisitor = new SemanticVisitor();
         semanticVisitor.visit(tree);
         semanticVisitor.checkSemantics();
 
-        // Genera il file .jj (JavaCC)
+        // Generazione dei file di specifica per JavaCC e ANTLR
         JavaCCVisitor javaCCVisitor = new JavaCCVisitor();
         javaCCVisitor.visit(tree);
         javaCCVisitor.writeOutputToFile("GrammarOut.jj");
 
-        // Genera il file .g4 (ANTLR)
         AntlrVisitor antlrVisitor = new AntlrVisitor();
         antlrVisitor.visit(tree);
         antlrVisitor.writeOutputToFile("GrammarOut.g4");
