@@ -12,14 +12,6 @@ public class GrammarOut {
 PARSER_END(GrammarOut)
 
 TOKEN : {
-  <ID : ["a"-"z", "A"-"Z"](["a"-"z", "A"-"Z", "0"-"9"])*>
-}
-
-TOKEN : {
-  <NUMBER : (["0"-"9"])+>
-}
-
-TOKEN : {
   <SEMICOLON : ";">
 }
 
@@ -75,6 +67,14 @@ TOKEN : {
   <COMPARISON : "==" | "!=" | "<" | "<=" | ">" | ">=">
 }
 
+TOKEN : {
+  <ID : ["a"-"z", "A"-"Z"](["a"-"z", "A"-"Z", "0"-"9"])*>
+}
+
+TOKEN : {
+  <NUMBER : (["0"-"9"])+>
+}
+
 void Program() :
 {
 }
@@ -85,8 +85,7 @@ void Statements() :
 {
 }
 {
- Statement() <SEMICOLON> Statements() |
- Statement()}
+ Statement() [ StatementsSuffix()]}
 
 void Statement() :
 {
@@ -120,15 +119,13 @@ void Expression() :
 {
 }
 {
- Expression() <SUM_DIF> MulDivExpr() |
- MulDivExpr()}
+ MulDivExpr() [ ExpressionTail()]}
 
 void MulDivExpr() :
 {
 }
 {
- MulDivExpr() <MUL_DIV> Factor() |
- Factor()}
+ Factor() [ MulDivExprTail()]}
 
 void Factor() :
 {
@@ -142,12 +139,41 @@ void IfThen() :
 {
 }
 {
- <IF> Condition() <THEN> Statements() |
- <IF> Condition() <THEN> Statements() <ELSE> Statements() Condition()}
+ <IF> Condition() <THEN> Statements() [ IfThenSuffix()]}
+
+void Condition() :
+{
+}
+{
+ Expression() <COMPARISON> Expression()}
 
 void RepeatUntil() :
 {
 }
 {
  <REPEAT> Statements() <UNTIL> Condition()}
+
+void MulDivExprTail() :
+{
+}
+{
+ <MUL_DIV> Factor() [ MulDivExprTail()]}
+
+void ExpressionTail() :
+{
+}
+{
+ <SUM_DIF> MulDivExpr() [ ExpressionTail()]}
+
+void IfThenSuffix() :
+{
+}
+{
+ <ELSE> Statements()}
+
+void StatementsSuffix() :
+{
+}
+{
+ <SEMICOLON> Statements()}
 

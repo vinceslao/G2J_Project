@@ -1,8 +1,6 @@
 /* Input in notazione EBNF */
 
 /* Token */
-ID            ::= [a-zA-Z][a-zA-Z0-9]* ;
-NUMBER        ::= [0-9]+ ;
 SEMICOLON     ::= ";" ;
 ASSIGNMENT    ::= ":=" ;
 SUM_DIF       ::= "+" | "-" ;
@@ -17,6 +15,8 @@ ELSE          ::= "ELSE" ;
 REPEAT        ::= "REPEAT" ;
 UNTIL         ::= "UNTIL" ;
 COMPARISON    ::= "==" | "!=" | "<" | "<=" | ">" | ">=" ;
+ID            ::= [a-zA-Z][a-zA-Z0-9]* ;
+NUMBER        ::= [0-9]+ ;
 
 /* Regole di produzione */
 <Program>::= <Statements> EOF ;
@@ -28,6 +28,6 @@ COMPARISON    ::= "==" | "!=" | "<" | "<=" | ">" | ">=" ;
 <Expression>::= <Expression> SUM_DIF <MulDivExpr> | <MulDivExpr> ;
 <MulDivExpr>::= <MulDivExpr> MUL_DIV <Factor> | <Factor> ;
 <Factor>::= ID | NUMBER | (LEF_PAR <Expression> RIGHT_PAR) ;
-<IfThen>::= IF <Condition> THEN <Statements> | IF <Condition> THEN <Statements> ELSE <Statements>
+<IfThen>::= IF <Condition> THEN <Statements> | IF <Condition> THEN <Statements> ELSE <Statements> ;
 <Condition>::= <Expression> COMPARISON <Expression> ;
 <RepeatUntil>::= REPEAT <Statements> UNTIL <Condition> ;

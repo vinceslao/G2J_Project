@@ -13,6 +13,9 @@ import java.io.InputStream;
 
 public class Main {
     public static void main(String[] args) throws Exception {
+
+        // ============= ANALISI LESSICALE, SINTATTICA E SEMANTICA DEL FILE DI INPUT =================
+
         String fileName = "src/main/resources/input.txt";
         InputStream input = new FileInputStream(fileName);
         G2JLexer lexer = new G2JLexer(CharStreams.fromStream(input));
@@ -32,18 +35,29 @@ public class Main {
             return;
         }
 
-        // Analisi semantica
+        // Analisi semantica e ottimizzazione dell'input
         SemanticVisitor semanticVisitor = new SemanticVisitor();
         semanticVisitor.visit(tree);
         semanticVisitor.checkSemantics();
 
+
+        // ============= GENERAZIONE DEI FILE DI OUTPUT DALL'INPUT OTTIMIZZATO =================
+
+        String optimized_fileName = "output/optimized_input.txt";
+        InputStream optimized_input = new FileInputStream(optimized_fileName);
+        G2JLexer lexer2 = new G2JLexer(CharStreams.fromStream(optimized_input));
+        CommonTokenStream tokens2 = new CommonTokenStream(lexer2);
+        G2JParser parser2 = new G2JParser(tokens2);
+
+        ParseTree tree2 = parser2.grammarFile();
+
         // Generazione dei file di specifica per JavaCC e ANTLR
         JavaCCVisitor javaCCVisitor = new JavaCCVisitor();
-        javaCCVisitor.visit(tree);
-        javaCCVisitor.writeOutputToFile("GrammarOut.jj");
+        javaCCVisitor.visit(tree2);
+        javaCCVisitor.writeOutputToFile("output/GrammarOut.jj");
 
         AntlrVisitor antlrVisitor = new AntlrVisitor();
-        antlrVisitor.visit(tree);
-        antlrVisitor.writeOutputToFile("GrammarOut.g4");
+        antlrVisitor.visit(tree2);
+        antlrVisitor.writeOutputToFile("output/GrammarOut.g4");
     }
 }
