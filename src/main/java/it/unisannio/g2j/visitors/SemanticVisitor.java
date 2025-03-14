@@ -548,7 +548,6 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
 
     public void calcMetrics (){
 
-
         System.out.println("\nCALCOLO DELLE METRICHE SULL'INPUT ORIGINALE");
         System.out.println("Numero dei simboli non terminali: "+ (definedNonTerminals.size() - optimizedNonTerminals.size()));
         System.out.println("Numero dei simboli terminali: "+definedTerminals.size());
