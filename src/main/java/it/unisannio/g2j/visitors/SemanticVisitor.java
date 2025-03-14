@@ -25,6 +25,9 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
 
     private List<String> orderedNonTerminals = new ArrayList<>();
 
+    private Set<String> optimizedNonTerminals = new HashSet<>();
+    private Set<String> optimizedTerminals = new HashSet<>();
+
 
     @Override
     public Void visitGrammarFile(G2JParser.GrammarFileContext ctx) {
@@ -134,22 +137,24 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
             checkNotUsedTerminals();
             checkUnreachableProductions();
             checkUnreachableTokens();
-
-            // Inizializza la mappa di produzioni ottimizzate con le produzioni originali
-            optimizedProductions = new HashMap<>(productions);
-
-            // Applica le ottimizzazioni
-            eliminateLeftRecursion();
-            factorizeCommonPrefixes();
-
-            // Se sono state apportate modifiche, genera il file ottimizzato
-            if (grammarModified) {
-                generateOptimizedGrammarFile("output/optimized_input.txt");
-            }
         } catch(SemanticException e) {
             System.err.println("❌ Catturata eccezione di tipo SemanticException 😡");
             System.err.println(e.getMessage());
             System.exit(1);
+        }
+    }
+
+    public void optimizeInput(){
+        // Inizializza la mappa di produzioni ottimizzate con le produzioni originali
+        optimizedProductions = new HashMap<>(productions);
+
+        // Applica le ottimizzazioni
+        eliminateLeftRecursion();
+        factorizeCommonPrefixes();
+
+        // Se sono state apportate modifiche, genera il file ottimizzato
+        if (grammarModified) {
+            generateOptimizedGrammarFile("output/optimized_input.txt");
         }
     }
 
@@ -324,6 +329,8 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
             System.out.println("Regola ottimizzata:");
             System.out.println(nonTerminal + " ::= " + formatOptimizedProduction(newProductions) + " ;");
             System.out.println(newNonTerminal + " ::= " + formatOptimizedProduction(tailProductions) + " ;");
+
+            optimizedNonTerminals.add(newNonTerminal);
         }
     }
 
@@ -393,9 +400,6 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
             if (production.size() > commonPrefix.size()) {
                 List<String> suffix = new ArrayList<>(production.subList(commonPrefix.size(), production.size()));
                 suffixProductions.add(suffix);
-            } else {
-                // Se la produzione è esattamente uguale al prefisso comune, aggiungi una produzione vuota
-                suffixProductions.add(new ArrayList<>());
             }
         }
 
@@ -406,6 +410,8 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
         System.out.println("Regola fattorizzata:");
         System.out.println(nonTerminal + " ::= " + formatOptimizedProduction(newProductions) + " ;");
         System.out.println(newNonTerminal + " ::= " + formatOptimizedProduction(suffixProductions) + " ;");
+
+        optimizedNonTerminals.add(newNonTerminal);
     }
 
     /**
@@ -529,9 +535,56 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
                 }
             }
 
+
+
             System.out.println("\n✅ Grammatica ottimizzata salvata nel file: " + filePath);
         } catch (java.io.IOException e) {
             System.err.println("❌ Errore durante la scrittura del file di grammatica ottimizzato: " + e.getMessage());
         }
     }
+
+
+    // ============================== CALCOLO DELLE METRICHE DI VALUTAZIONE ===================================
+
+    public void calcMetrics (){
+
+
+        System.out.println("\nCALCOLO DELLE METRICHE SULL'INPUT ORIGINALE");
+        System.out.println("Numero dei simboli non terminali: "+ (definedNonTerminals.size() - optimizedNonTerminals.size()));
+        System.out.println("Numero dei simboli terminali: "+definedTerminals.size());
+
+        // Calcola il numero totale di produzioni per l'input originale
+        int totalOriginalProductions = 0;
+        int totalOriginalUnitProductions = 0; // Contatore per produzioni unitarie
+        for (List<List<String>> productionList : productions.values()) {
+            totalOriginalProductions += productionList.size();
+            for (List<String> production : productionList) {
+                if (production.size() == 1) { // Produzione unitaria
+                    totalOriginalUnitProductions++;
+                }
+            }
+        }
+        System.out.println("Numero di regole di produzione: " + totalOriginalProductions);
+        System.out.println("Numero di produzioni unitarie: " + (totalOriginalUnitProductions-1));
+
+
+        System.out.println("\nCALCOLO DELLE METRICHE SULL'INPUT OTTIMIZZATO");
+        System.out.println("Numero dei simboli non terminali: "+definedNonTerminals.size());
+        System.out.println("Numero dei simboli terminali: "+definedTerminals.size());
+
+        // Calcola il numero totale di produzioni per l'input ottimizzato
+        int totalOptimizedProductions = 0;
+        int totalOptimizedUnitProductions = 0; // Contatore per produzioni unitarie
+        for (List<List<String>> productionList : optimizedProductions.values()) {
+            totalOptimizedProductions += productionList.size();
+            for (List<String> production : productionList) {
+                if (production.size() == 1) { // Produzione unitaria
+                    totalOptimizedUnitProductions++;
+                }
+            }
+        }
+        System.out.println("Numero di regole di produzione: " + totalOptimizedProductions);
+        System.out.println("Numero di produzioni unitarie: " + (totalOptimizedUnitProductions-1));
+    }
+
 }

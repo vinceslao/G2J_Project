@@ -40,6 +40,8 @@ public class Main {
         semanticVisitor.visit(tree);
         semanticVisitor.checkSemantics();
 
+        semanticVisitor.optimizeInput();
+
 
         // ============= GENERAZIONE DEI FILE DI OUTPUT DALL'INPUT OTTIMIZZATO =================
 
@@ -59,5 +61,9 @@ public class Main {
         AntlrVisitor antlrVisitor = new AntlrVisitor();
         antlrVisitor.visit(tree2);
         antlrVisitor.writeOutputToFile("output/GrammarOut.g4");
+
+
+        semanticVisitor.calcMetrics();
+
     }
 }
