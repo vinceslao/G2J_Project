@@ -533,8 +533,11 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
 
     public void calcMetrics() {
         // Calcola le metriche per l'input originale
+
+        int originalNonTerminalCount = (definedNonTerminals.size() - optimizedNonTerminals.size());
+
         System.out.println("\nCALCOLO DELLE METRICHE SULL'INPUT ORIGINALE");
-        System.out.println("Numero dei simboli non terminali: " + (definedNonTerminals.size() - optimizedNonTerminals.size()));
+        System.out.println("Numero dei simboli non terminali: " + originalNonTerminalCount);
         System.out.println("Numero dei simboli terminali: " + definedTerminals.size());
 
         // Calcola il numero totale di produzioni per l'input originale
@@ -567,11 +570,15 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
         }
 
         RHSMean = (sumProductionLength+1) / totalOriginalProductions;
+        double alt = totalOriginalProductions / originalNonTerminalCount;
 
         System.out.println("Numero di regole di produzione: " + totalOriginalProductions);
         System.out.println("Numero di produzioni unitarie: " + totalOriginalUnitProductions);
         System.out.println("RHS max: " + originalRHSMax);
         System.out.println("RHS mean: " + RHSMean);
+
+
+        System.out.println("ALT " + alt);
 
         // Calcola le metriche per l'input ottimizzato
         System.out.println("\nCALCOLO DELLE METRICHE SULL'INPUT OTTIMIZZATO");
@@ -607,10 +614,14 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
 
         OptimizedRHSMean = (sumProductionLengthOpt+1) / totalOptimizedProductions;
 
+        double alt_opt = totalOptimizedProductions / definedNonTerminals.size();
+
+
         System.out.println("Numero di regole di produzione: " + totalOptimizedProductions);
         System.out.println("Numero di produzioni unitarie: " + totalOptimizedUnitProductions);
         System.out.println("RHS max: " + optimizedRHSMax);
         System.out.println("RHS mean: " + OptimizedRHSMean);
+        System.out.println("ALT: " + alt_opt);
     }
 
 }
