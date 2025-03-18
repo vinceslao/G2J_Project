@@ -26,7 +26,6 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
     private List<String> orderedNonTerminals = new ArrayList<>();
 
     private Set<String> optimizedNonTerminals = new HashSet<>();
-    private Set<String> optimizedTerminals = new HashSet<>();
 
 
     @Override
@@ -82,36 +81,30 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
             elements.add(ctx.TERM().getText());
             usedTerminals.add(ctx.TERM().getText());
         } else if (ctx.grouping() != null) {
-            elements.add("(");
-            visitProduction(ctx.grouping().production(), elements);
-            elements.add(")");
+            visitGrouping(ctx.grouping(), elements);
         } else if (ctx.optionality() != null) {
-            elements.add("[");
-            visitProduction(ctx.optionality().production(), elements);
-            elements.add("]");
+            visitOptionality(ctx.optionality(), elements);
         } else if (ctx.repetivity() != null) {
-            elements.add("{");
-            visitProduction(ctx.repetivity().production(), elements);
-            elements.add("}");
+            visitRepetivity(ctx.repetivity(), elements);
         }
     }
 
     private void visitGrouping(G2JParser.GroupingContext ctx, List<String> elements) {
-        elements.add("("); // Apre il raggruppamento
+        elements.add(ctx.LEFT_ROUND_BRACKET().getText()); // Apre il raggruppamento
         visitProduction(ctx.production(), elements); // Visita la produzione interna
-        elements.add(")"); // Chiude il raggruppamento
+        elements.add(ctx.RIGHT_ROUND_BRACKET().getText()); // Chiude il raggruppamento
     }
 
     private void visitOptionality(G2JParser.OptionalityContext ctx, List<String> elements) {
-        elements.add("["); // Apre l'opzionalità
+        elements.add(ctx.LEFT_SQUARE_BRACKET().getText()); // Apre l'opzionalità
         visitProduction(ctx.production(), elements); // Visita la produzione interna
-        elements.add("]"); // Chiude l'opzionalità
+        elements.add(ctx.RIGHT_SQUARE_BRACKET().getText()); // Chiude l'opzionalità
     }
 
     private void visitRepetivity(G2JParser.RepetivityContext ctx, List<String> elements) {
-        elements.add("{"); // Apre la ripetizione
+        elements.add(ctx.LEFT_CURLY_BRACKET().getText()); // Apre la ripetizione
         visitProduction(ctx.production(), elements); // Visita la produzione interna
-        elements.add("}"); // Chiude la ripetizione
+        elements.add(ctx.RIGHT_CURLY_BRACKET().getText()); // Chiude la ripetizione
     }
 
     @Override
@@ -296,17 +289,13 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
                 for (List<String> alpha : nonLeftRecursiveProductions) {
                     List<String> newProduction = new ArrayList<>(alpha);
                     // Aggiungi il non terminale opzionale
-                    newProduction.add("[");
-                    newProduction.add(newNonTerminal);
-                    newProduction.add("]");
+                    newProduction.add("[" +newNonTerminal+ "]");
                     newProductions.add(newProduction);
                 }
             } else {
                 // Se non ci sono produzioni non ricorsive, usa una produzione vuota
                 List<String> emptyProduction = new ArrayList<>();
-                emptyProduction.add("[");
-                emptyProduction.add(newNonTerminal);
-                emptyProduction.add("]");
+                emptyProduction.add("["+newNonTerminal+"]");
                 newProductions.add(emptyProduction);
             }
 
@@ -318,9 +307,7 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
             for (List<String> beta : leftRecursiveProductions) {
                 List<String> newProduction = new ArrayList<>(beta.subList(1, beta.size()));
                 // Aggiungi il non terminale opzionale
-                newProduction.add("[");
-                newProduction.add(newNonTerminal);
-                newProduction.add("]");
+                newProduction.add("["+newNonTerminal+"]");
                 tailProductions.add(newProduction);
             }
 
@@ -388,9 +375,7 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
         // Crea le nuove produzioni
         List<List<String>> newProductions = new ArrayList<>();
         List<String> newProduction = new ArrayList<>(commonPrefix);
-        newProduction.add("[");
-        newProduction.add(newNonTerminal);
-        newProduction.add("]");
+        newProduction.add("["+newNonTerminal+"]");
         newProductions.add(newProduction);
 
         // Crea le produzioni per il nuovo non terminale (suffissi)
@@ -546,44 +531,86 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
 
     // ============================== CALCOLO DELLE METRICHE DI VALUTAZIONE ===================================
 
-    public void calcMetrics (){
-
+    public void calcMetrics() {
+        // Calcola le metriche per l'input originale
         System.out.println("\nCALCOLO DELLE METRICHE SULL'INPUT ORIGINALE");
-        System.out.println("Numero dei simboli non terminali: "+ (definedNonTerminals.size() - optimizedNonTerminals.size()));
-        System.out.println("Numero dei simboli terminali: "+definedTerminals.size());
+        System.out.println("Numero dei simboli non terminali: " + (definedNonTerminals.size() - optimizedNonTerminals.size()));
+        System.out.println("Numero dei simboli terminali: " + definedTerminals.size());
 
         // Calcola il numero totale di produzioni per l'input originale
-        int totalOriginalProductions = 0;
+        double totalOriginalProductions = 0;
         int totalOriginalUnitProductions = 0; // Contatore per produzioni unitarie
+        int originalRHSMax = 0; // Contatore per RHS max
+        int sumProductionLength = 0;
+        double RHSMean=0;
+        Set<String> delimiters = new HashSet<>(Arrays.asList("(", ")", "[", "]", "{", "}"));
+
         for (List<List<String>> productionList : productions.values()) {
             totalOriginalProductions += productionList.size();
             for (List<String> production : productionList) {
-                if (production.size() == 1) { // Produzione unitaria
+                // Count actual elements (excluding delimiters)
+                int actualElements = 0;
+                for (String element : production) {
+                    if (!delimiters.contains(element)) {
+                        actualElements++;
+                    }
+                }
+
+                if (actualElements == 1) {
                     totalOriginalUnitProductions++;
                 }
+                if (actualElements > originalRHSMax) {
+                    originalRHSMax = actualElements;
+                }
+                sumProductionLength += actualElements;
             }
         }
+
+        RHSMean = (sumProductionLength+1) / totalOriginalProductions;
+
         System.out.println("Numero di regole di produzione: " + totalOriginalProductions);
-        System.out.println("Numero di produzioni unitarie: " + (totalOriginalUnitProductions-1));
+        System.out.println("Numero di produzioni unitarie: " + totalOriginalUnitProductions);
+        System.out.println("RHS max: " + originalRHSMax);
+        System.out.println("RHS mean: " + RHSMean);
 
-
+        // Calcola le metriche per l'input ottimizzato
         System.out.println("\nCALCOLO DELLE METRICHE SULL'INPUT OTTIMIZZATO");
-        System.out.println("Numero dei simboli non terminali: "+definedNonTerminals.size());
-        System.out.println("Numero dei simboli terminali: "+definedTerminals.size());
+        System.out.println("Numero dei simboli non terminali: " + definedNonTerminals.size());
+        System.out.println("Numero dei simboli terminali: " + definedTerminals.size()); // I terminali non cambiano
 
         // Calcola il numero totale di produzioni per l'input ottimizzato
-        int totalOptimizedProductions = 0;
+        double totalOptimizedProductions = 0;
         int totalOptimizedUnitProductions = 0; // Contatore per produzioni unitarie
+        int optimizedRHSMax = 0; // Contatore per RHS max
+        int sumProductionLengthOpt = 0;
+        double OptimizedRHSMean = 0;
+
         for (List<List<String>> productionList : optimizedProductions.values()) {
             totalOptimizedProductions += productionList.size();
             for (List<String> production : productionList) {
+                int actualElements = 0;
+                for (String element : production) {
+                    if (!delimiters.contains(element)) {
+                        actualElements++;
+                    }
+                }
                 if (production.size() == 1) { // Produzione unitaria
                     totalOptimizedUnitProductions++;
                 }
+                if (production.size() > optimizedRHSMax) { // Aggiorna RHS max
+                    optimizedRHSMax = actualElements;
+                }
+
+                sumProductionLengthOpt += actualElements;
             }
         }
+
+        OptimizedRHSMean = (sumProductionLengthOpt+1) / totalOptimizedProductions;
+
         System.out.println("Numero di regole di produzione: " + totalOptimizedProductions);
-        System.out.println("Numero di produzioni unitarie: " + (totalOptimizedUnitProductions-1));
+        System.out.println("Numero di produzioni unitarie: " + totalOptimizedUnitProductions);
+        System.out.println("RHS max: " + optimizedRHSMax);
+        System.out.println("RHS mean: " + OptimizedRHSMean);
     }
 
 }
