@@ -3,86 +3,75 @@ package it.unisannio.g2j.visitors;
 import it.unisannio.g2j.G2JBaseVisitor;
 import it.unisannio.g2j.G2JParser;
 import it.unisannio.g2j.exceptions.SemanticException;
+import it.unisannio.g2j.symbols.SymbolTable;
 
+import java.io.IOException;
 import java.util.*;
 
 public class SemanticVisitor extends G2JBaseVisitor<Void> {
 
-    private Set<String> definedNonTerminals = new HashSet<>();
-    private Set<String> definedTerminals = new HashSet<>();
-    private Set<String> usedNonTerminals = new HashSet<>();
-    private Set<String> usedTerminals = new HashSet<>();
-    private Map<String, List<List<String>>> productions = new HashMap<>();
+    // Symbol table for managing symbols
+    private final SymbolTable symbolTable = new SymbolTable();
 
-    // Variabili per le ottimizzazioni
+    // Maps and sets for optimization
     private Map<String, List<List<String>>> optimizedProductions = new HashMap<>();
     private Set<String> newNonTerminals = new HashSet<>();
     private boolean grammarModified = false;
 
-    // Lista di token e regole per ricostruire l'output
-    private List<String> lexRulesList = new ArrayList<>();
-    private Map<String, String> lexRulesMap = new HashMap<>();
+    // Keep track of recursion symbols
+    private int numRecursionSymbols = 0;
 
-    // Lista ordinata utilizzata per mantenere l'ordine della definizione dei non terminali per l'input ottimizzato.
-    private List<String> orderedNonTerminals = new ArrayList<>();
-    private Set<String> optimizedNonTerminals = new HashSet<>();
-
-    private int numRecorsionSymbols = 0;
-
+    // Set of symbols that should be ignored for symbol usage tracking (delimiters, etc.)
+    private final Set<String> ignoredSymbols = new HashSet<>(
+            Arrays.asList("(", ")", "[", "]", "{", "}")
+    );
 
     @Override
     public Void visitGrammarFile(G2JParser.GrammarFileContext ctx) {
-        System.out.println("Visiting Grammar File");
         return visitChildren(ctx);
     }
 
     @Override
     public Void visitRules(G2JParser.RulesContext ctx) {
-        System.out.println("Visiting Rules");
         return visitChildren(ctx);
     }
 
     @Override
     public Void visitRule(G2JParser.RuleContext ctx) {
-        System.out.println("\nVisiting Rule");
         return visitChildren(ctx);
     }
 
     @Override
     public Void visitParseRule(G2JParser.ParseRuleContext ctx) {
         String nonTerminal = ctx.NON_TERM().getText();
-        definedNonTerminals.add(nonTerminal);
-        orderedNonTerminals.add(nonTerminal); // Aggiungi il non terminale alla lista ordinata
-        optimizedNonTerminals.add(nonTerminal); // Aggiungiamo il non terminale anche alla lista degli ottimizzati.
-        productions.put(nonTerminal, new ArrayList<>()); // Inizializza la lista di produzioni per questo non terminale
-        System.out.println("Visiting Parsing Rule: " + nonTerminal);
-        visitProductionList(ctx.productionList(), nonTerminal); // Passa il non terminale corrente
+        symbolTable.addNonTerminal(nonTerminal);
+        visitProductionList(ctx.productionList(), nonTerminal);
         return null;
     }
 
     private void visitProductionList(G2JParser.ProductionListContext ctx, String currentNonTerminal) {
         for (G2JParser.ProductionContext production : ctx.production()) {
             List<String> elements = new ArrayList<>();
-            visitProduction(production, elements); // Visita la produzione e raccoglie gli elementi
-            productions.get(currentNonTerminal).add(elements); // Aggiunge la produzione al non terminale corrente
+            visitProduction(production, elements); // Collect elements from the production
+            symbolTable.addProduction(currentNonTerminal, elements);
         }
     }
 
     private void visitProduction(G2JParser.ProductionContext ctx, List<String> elements) {
-        System.out.println("Visiting production: " + ctx.getText());
         for (G2JParser.ElementContext element : ctx.element()) {
             visitElement(element, elements);
         }
-        System.out.println("Elements: " + elements);
     }
 
     private void visitElement(G2JParser.ElementContext ctx, List<String> elements) {
         if (ctx.NON_TERM() != null) {
-            elements.add(ctx.NON_TERM().getText());
-            usedNonTerminals.add(ctx.NON_TERM().getText());
+            String nonTerm = ctx.NON_TERM().getText();
+            elements.add(nonTerm);
+            symbolTable.markAsUsed(nonTerm);
         } else if (ctx.TERM() != null && !Objects.equals(ctx.TERM().getText(), "EOF")) {
-            elements.add(ctx.TERM().getText());
-            usedTerminals.add(ctx.TERM().getText());
+            String term = ctx.TERM().getText();
+            elements.add(term);
+            symbolTable.markAsUsed(term);
         } else if (ctx.grouping() != null) {
             visitGrouping(ctx.grouping(), elements);
         } else if (ctx.optionality() != null) {
@@ -93,39 +82,32 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
     }
 
     private void visitGrouping(G2JParser.GroupingContext ctx, List<String> elements) {
-        elements.add(ctx.LEFT_ROUND_BRACKET().getText()); // Apre il raggruppamento
-        visitProduction(ctx.production(), elements); // Visita la produzione interna
-        elements.add(ctx.RIGHT_ROUND_BRACKET().getText()); // Chiude il raggruppamento
+        elements.add(ctx.LEFT_ROUND_BRACKET().getText()); // Add opening bracket
+        visitProduction(ctx.production(), elements);      // Visit internal production
+        elements.add(ctx.RIGHT_ROUND_BRACKET().getText()); // Add closing bracket
     }
 
     private void visitOptionality(G2JParser.OptionalityContext ctx, List<String> elements) {
-        elements.add(ctx.LEFT_SQUARE_BRACKET().getText()); // Apre l'opzionalità
-        visitProduction(ctx.production(), elements); // Visita la produzione interna
-        elements.add(ctx.RIGHT_SQUARE_BRACKET().getText()); // Chiude l'opzionalità
+        elements.add(ctx.LEFT_SQUARE_BRACKET().getText()); // Add opening bracket
+        visitProduction(ctx.production(), elements);      // Visit internal production
+        elements.add(ctx.RIGHT_SQUARE_BRACKET().getText()); // Add closing bracket
     }
 
     private void visitRepetivity(G2JParser.RepetivityContext ctx, List<String> elements) {
-        elements.add(ctx.LEFT_CURLY_BRACKET().getText()); // Apre la ripetizione
-        visitProduction(ctx.production(), elements); // Visita la produzione interna
-        elements.add(ctx.RIGHT_CURLY_BRACKET().getText()); // Chiude la ripetizione
+        elements.add(ctx.LEFT_CURLY_BRACKET().getText()); // Add opening bracket
+        visitProduction(ctx.production(), elements);      // Visit internal production
+        elements.add(ctx.RIGHT_CURLY_BRACKET().getText()); // Add closing bracket
     }
 
     @Override
     public Void visitLexRule(G2JParser.LexRuleContext ctx) {
         String terminal = ctx.TERM().getText();
-        definedTerminals.add(terminal);
-
-        // Salva la definizione completa della regola lessicale
         String regexDef = ctx.getText().substring(terminal.length() + "::=".length());
-        lexRulesMap.put(terminal, regexDef);
-        lexRulesList.add(terminal);
-
-        System.out.println("Visiting Lexical Rule: " + terminal);
+        symbolTable.addTerminal(terminal, regexDef);
         return visitChildren(ctx);
     }
 
-
-    // ==================== Metodi di Analisi Semantica ====================
+    // ==================== Semantic Analysis Methods ====================
 
     public void checkSemantics() {
         try {
@@ -133,6 +115,8 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
             checkNotUsedTerminals();
             checkUnreachableProductions();
             checkUnreachableTokens();
+
+            symbolTable.printSymbolTable();
         } catch(SemanticException e) {
             System.err.println("❌ Catturata eccezione di tipo SemanticException 😡");
             System.err.println(e.getMessage());
@@ -141,9 +125,12 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
     }
 
     /**
-     *  1. Verifica che tutti i non terminali usati siano definiti
+     * 1. Verify that all used non-terminals are defined
      */
     private void checkNotUsedNonTerminals() {
+        Set<String> usedNonTerminals = symbolTable.getUsedNonTerminals();
+        Set<String> definedNonTerminals = symbolTable.getDefinedNonTerminals();
+
         for (String nonTerminal : usedNonTerminals) {
             if (!definedNonTerminals.contains(nonTerminal)) {
                 throw new SemanticException("Errore semantico: Non terminale non definito - " + nonTerminal);
@@ -152,9 +139,12 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
     }
 
     /**
-     * 2. Verifica che tutti i terminali usati siano definiti
+     * 2. Verify that all used terminals are defined
      */
     private void checkNotUsedTerminals() {
+        Set<String> usedTerminals = symbolTable.getUsedTerminals();
+        Set<String> definedTerminals = symbolTable.getDefinedTerminals();
+
         for (String terminal : usedTerminals) {
             if (!definedTerminals.contains(terminal)) {
                 throw new SemanticException("Errore semantico: Terminale non definito - " + terminal);
@@ -163,32 +153,32 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
     }
 
     /**
-     * 3. Verifica produzioni non raggiungibili
+     * 3. Verify unreachable productions
      */
     private void checkUnreachableProductions() {
         Set<String> reachable = new HashSet<>();
-        reachable.add("<Program>");
+        reachable.add("<Program>"); // Starting symbol
 
         boolean changed;
         do {
             changed = false;
-            Set<String> reachableCopy = new HashSet<>(reachable); // Copia temporanea
+            Set<String> reachableCopy = new HashSet<>(reachable); // Temporary copy
+
             for (String nonTerminal : reachableCopy) {
-                List<List<String>> nonTermProds = productions.get(nonTerminal);
-                if (nonTermProds != null) {
-                    for (List<String> production : nonTermProds) {
-                        for (String symbol : production) {
-                            if (definedNonTerminals.contains(symbol) && !reachable.contains(symbol)) {
-                                reachable.add(symbol); // Modifica il Set `reachable`
-                                changed = true;
-                            }
+                List<List<String>> nonTermProds = symbolTable.getProductions(nonTerminal);
+
+                for (List<String> production : nonTermProds) {
+                    for (String symbol : production) {
+                        if (symbolTable.isNonTerminal(symbol) && !reachable.contains(symbol)) {
+                            reachable.add(symbol);
+                            changed = true;
                         }
                     }
                 }
             }
         } while (changed);
 
-        for (String nonTerminal : definedNonTerminals) {
+        for (String nonTerminal : symbolTable.getDefinedNonTerminals()) {
             if (!reachable.contains(nonTerminal)) {
                 throw new SemanticException("⚠️ Errore semantico: Produzione non raggiungibile - " + nonTerminal);
             }
@@ -196,16 +186,12 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
     }
 
     /**
-     * 4. Verifica produzioni non raggiungibili
+     * 4. Verify unreachable tokens
      */
     private void checkUnreachableTokens() {
-        // Ottieni tutti i terminali definiti
-        Set<String> definedTokens = new HashSet<>(definedTerminals);
+        Set<String> definedTokens = symbolTable.getDefinedTerminals();
+        Set<String> usedTokens = symbolTable.getUsedTerminals();
 
-        // Ottieni tutti i terminali utilizzati nelle produzioni
-        Set<String> usedTokens = new HashSet<>(usedTerminals);
-
-        // Verifica se ci sono terminali definiti ma non utilizzati
         for (String token : definedTokens) {
             if (!usedTokens.contains(token)) {
                 throw new SemanticException("⚠️ Errore semantico: Token non raggiungibile - " + token);
@@ -213,13 +199,18 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
         }
     }
 
-    // ============================== OTTIMIZZAZIONI =================================
+    // ============================== OPTIMIZATIONS =================================
 
     /**
-     * 1. Eliminazione della ricorsione sinistra
+     * 1. Eliminate left recursion
      */
     private void eliminateLeftRecursion() {
-        for (String nonTerminal : new HashSet<>(definedNonTerminals)) { // Usa una copia per evitare ConcurrentModificationException
+        // Initialize optimized productions with original ones if not already done
+        if (optimizedProductions.isEmpty()) {
+            optimizedProductions = new HashMap<>(symbolTable.getAllProductions());
+        }
+
+        for (String nonTerminal : new HashSet<>(symbolTable.getDefinedNonTerminals())) {
             if (hasLeftRecursion(nonTerminal)) {
                 System.out.println("\n\n⚠️ Ricorsione sinistra rilevata per - " + nonTerminal);
                 applyLeftRecursionElimination(nonTerminal);
@@ -234,7 +225,7 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
 
         for (List<String> production : prods) {
             if (!production.isEmpty() && production.get(0).equals(nonTerminal)) {
-                numRecorsionSymbols++;
+                numRecursionSymbols++;
                 return true;
             }
         }
@@ -242,7 +233,7 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
     }
 
     private void applyLeftRecursionElimination(String nonTerminal) {
-        // Trova tutte le produzioni con ricorsione sinistra
+        // Find all productions with left recursion
         List<List<String>> leftRecursiveProductions = new ArrayList<>();
         List<List<String>> nonLeftRecursiveProductions = new ArrayList<>();
 
@@ -255,7 +246,7 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
         }
 
         if (!leftRecursiveProductions.isEmpty()) {
-            // Stampa la regola originale
+            // Print original rule
             System.out.println("\nRegola che contiene la ricorsione a sinistra:");
             System.out.print(nonTerminal + " ::= ");
             for (int i = 0; i < optimizedProductions.get(nonTerminal).size(); i++) {
@@ -267,36 +258,34 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
             }
             System.out.println(" ;");
 
-            // Crea un nuovo non terminale per gestire la ricorsione
+            // Create a new non-terminal to handle recursion
             String newNonTerminal = nonTerminal.replace(">", "Tail>");
             newNonTerminals.add(newNonTerminal);
 
-            // Aggiorna la produzione originale
+            // Update original production
             List<List<String>> newProductions = new ArrayList<>();
 
             if (!nonLeftRecursiveProductions.isEmpty()) {
                 for (List<String> alpha : nonLeftRecursiveProductions) {
                     List<String> newProduction = new ArrayList<>(alpha);
-                    // Aggiungi il non terminale opzionale
-                    newProduction.add("[" +newNonTerminal+ "]");
+                    newProduction.add("[" + newNonTerminal + "]");
                     newProductions.add(newProduction);
                 }
             } else {
-                // Se non ci sono produzioni non ricorsive, usa una produzione vuota
+                // If there are no non-recursive productions, use an empty one
                 List<String> emptyProduction = new ArrayList<>();
-                emptyProduction.add("["+newNonTerminal+"]");
+                emptyProduction.add("[" + newNonTerminal + "]");
                 newProductions.add(emptyProduction);
             }
 
             optimizedProductions.put(nonTerminal, newProductions);
 
-            // Crea le produzioni per il nuovo non terminale
+            // Create productions for the new non-terminal
             List<List<String>> tailProductions = new ArrayList<>();
 
             for (List<String> beta : leftRecursiveProductions) {
                 List<String> newProduction = new ArrayList<>(beta.subList(1, beta.size()));
-                // Aggiungi il non terminale opzionale
-                newProduction.add("["+newNonTerminal+"]");
+                newProduction.add("[" + newNonTerminal + "]");
                 tailProductions.add(newProduction);
             }
 
@@ -305,14 +294,11 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
             System.out.println("Regola ottimizzata:");
             System.out.println(nonTerminal + " ::= " + formatOptimizedProduction(newProductions) + " ;");
             System.out.println(newNonTerminal + " ::= " + formatOptimizedProduction(tailProductions) + " ;");
-
-            optimizedNonTerminals.add(newNonTerminal);
         }
     }
 
-
     /**
-     * 2. Fattorizzazione a prefisso comune
+     * 2. Factorize common prefixes
      */
     private void factorizeCommonPrefixes() {
         boolean factorizationApplied;
@@ -320,10 +306,10 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
         do {
             factorizationApplied = false;
 
-            for (String nonTerminal : new HashSet<>(definedNonTerminals)) {
+            for (String nonTerminal : new HashSet<>(symbolTable.getDefinedNonTerminals())) {
                 List<List<String>> productionsForNT = optimizedProductions.get(nonTerminal);
                 if (productionsForNT != null && productionsForNT.size() > 1) {
-                    // Trova il prefisso comune più lungo tra tutte le produzioni
+                    // Find the longest common prefix among all productions
                     List<String> commonPrefix = findLongestCommonPrefix(productionsForNT);
 
                     if (!commonPrefix.isEmpty()) {
@@ -332,41 +318,41 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
                         System.out.print(nonTerminal + " ::= ");
                         System.out.println(formatOptimizedProduction(productionsForNT) + " ;");
 
-                        // Applica la fattorizzazione
+                        // Apply factorization
                         applyFactorization(nonTerminal, commonPrefix, productionsForNT);
                         factorizationApplied = true;
                         grammarModified = true;
-                        break;  // Ricomincia dall'inizio dopo aver applicato una fattorizzazione
+                        break;  // Start over after applying a factorization
                     }
                 }
             }
-        } while (factorizationApplied);  // Continua finché vengono applicate fattorizzazioni
+        } while (factorizationApplied);  // Continue until no more factorizations are applied
     }
 
     /**
-     * Applica la fattorizzazione del prefisso comune
+     * Apply common prefix factorization
      */
     private void applyFactorization(String nonTerminal, List<String> commonPrefix, List<List<String>> productionsForNT) {
-        // Crea un nuovo non terminale per gestire i suffissi
+        // Create a new non-terminal to handle suffixes
         String newNonTerminal = nonTerminal.replace(">", "Suffix>");
 
-        // Assicurati che il nome sia unico
+        // Ensure unique name
         int counter = 1;
         String originalName = newNonTerminal;
-        while (definedNonTerminals.contains(newNonTerminal)) {
+        while (symbolTable.containsSymbol(newNonTerminal) || newNonTerminals.contains(newNonTerminal)) {
             newNonTerminal = originalName.replace(">", counter + ">");
             counter++;
         }
 
         newNonTerminals.add(newNonTerminal);
 
-        // Crea le nuove produzioni
+        // Create new productions
         List<List<String>> newProductions = new ArrayList<>();
         List<String> newProduction = new ArrayList<>(commonPrefix);
-        newProduction.add("["+newNonTerminal+"]");
+        newProduction.add("[" + newNonTerminal + "]");
         newProductions.add(newProduction);
 
-        // Crea le produzioni per il nuovo non terminale (suffissi)
+        // Create productions for the new non-terminal (suffixes)
         List<List<String>> suffixProductions = new ArrayList<>();
 
         for (List<String> production : productionsForNT) {
@@ -376,19 +362,17 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
             }
         }
 
-        // Aggiorna le produzioni ottimizzate
+        // Update optimized productions
         optimizedProductions.put(nonTerminal, newProductions);
         optimizedProductions.put(newNonTerminal, suffixProductions);
 
         System.out.println("Regola fattorizzata:");
         System.out.println(nonTerminal + " ::= " + formatOptimizedProduction(newProductions) + " ;");
         System.out.println(newNonTerminal + " ::= " + formatOptimizedProduction(suffixProductions) + " ;");
-
-        optimizedNonTerminals.add(newNonTerminal);
     }
 
     /**
-     * Trova il prefisso comune più lungo tra una lista di produzioni
+     * Find the longest common prefix among a list of productions
      */
     private List<String> findLongestCommonPrefix(List<List<String>> productions) {
         if (productions.isEmpty()) {
@@ -406,7 +390,7 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
     }
 
     /**
-     * Trova il prefisso comune tra due liste
+     * Get the common prefix between two lists
      */
     private List<String> getCommonPrefix(List<String> list1, List<String> list2) {
         List<String> prefix = new ArrayList<>();
@@ -421,31 +405,27 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
         return prefix;
     }
 
+    // ============================== Optimized Input Generation ===================================
 
-
-    // ============================== COSTRUZIONE FILE DI INPUT OTTIMIZZATO ===================================
-
-
-    /*
-     * In questo metodo si gestisce la generazione del file di input ottimizzato.
+    /**
+     * Handles optimized input file generation
      */
-    public void optimizeInput(){
-        // Inizializza la mappa di produzioni ottimizzate con le produzioni originali
-        optimizedProductions = new HashMap<>(productions);
+    public void optimizeInput() {
+        // Initialize optimized productions with original ones
+        optimizedProductions = new HashMap<>(symbolTable.getAllProductions());
 
-        // Applica le ottimizzazioni. In questi metodi, si fa in modo che le ottimizzazioni vengano aggiunte alla mappa.
+        // Apply optimizations
         eliminateLeftRecursion();
         factorizeCommonPrefixes();
 
-        // Se sono state apportate modifiche, genera il file ottimizzato
+        // Generate optimized file if modifications were made
         if (grammarModified) {
             generateOptimizedGrammarFile();
         }
     }
 
-
     /**
-     * Formatta una lista di produzioni in una stringa per la visualizzazione
+     * Format a list of productions as a string for display
      */
     private String formatOptimizedProduction(List<List<String>> productions) {
         StringBuilder sb = new StringBuilder();
@@ -453,18 +433,18 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
         for (int i = 0; i < productions.size(); i++) {
             List<String> production = productions.get(i);
 
-            // Se la produzione è vuota, non aggiungere nulla
+            // Skip empty productions
             if (production.isEmpty()) {
-                continue; // Salta le produzioni vuote
+                continue;
             }
 
-            // Aggiungi gli elementi della produzione
+            // Add production elements
             for (String s : production) {
                 sb.append(s);
                 sb.append(" ");
             }
 
-            // Aggiungi il simbolo "|" solo se ci sono altre produzioni non vuote
+            // Add "|" separator if there are more non-empty productions
             if (i < productions.size() - 1 && !productions.get(i + 1).isEmpty()) {
                 sb.append(" | ");
             }
@@ -473,18 +453,21 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
         return sb.toString();
     }
 
+    /**
+     * Generate optimized grammar file
+     */
     private void generateOptimizedGrammarFile() {
         try (java.io.PrintWriter writer = new java.io.PrintWriter(new java.io.FileWriter("output/optimized_input.txt"))) {
             // Write lexical rules first
-            for (String terminal : lexRulesList) {
-                String ruleDef = lexRulesMap.get(terminal);
-                writer.println(terminal + "::=" + ruleDef+";");
+            for (String terminal : symbolTable.getOrderedTerminals()) {
+                String ruleDef = symbolTable.getTerminalDefinition(terminal);
+                writer.println(terminal + "::=" + ruleDef + ";");
             }
 
-            writer.println(); // Add a blank line between lexical and parsing rules
+            writer.println(); // Add blank line between lexical and parsing rules
 
-            // Write parsing rules in the original order
-            for (String nonTerminal : orderedNonTerminals) {
+            // Write parsing rules in original order
+            for (String nonTerminal : symbolTable.getOrderedNonTerminals()) {
                 // Skip new non-terminals created during optimization
                 if (newNonTerminals.contains(nonTerminal)) {
                     continue;
@@ -494,7 +477,7 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
                 if (prods != null && !prods.isEmpty()) {
                     writer.print(nonTerminal + " ::= ");
                     if (nonTerminal.equals("<Program>")) {
-                        // Aggiungi manualmente EOF alla regola <Program>
+                        // Manually add EOF to <Program> rule
                         writer.print(formatOptimizedProduction(prods) + " EOF");
                     } else {
                         writer.print(formatOptimizedProduction(prods));
@@ -513,17 +496,13 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
                 }
             }
 
-
-
             System.out.println("\n✅ Grammatica ottimizzata salvata nel file: " + "output/optimized_input.txt");
-        } catch (java.io.IOException e) {
-            System.err.println("❌ Errore durante la scrittura del file di grammatica ottimizzato: " + e.getMessage());
+        } catch (IOException e) {
+            System.err.println("Errore durante la scrittura del file di grammatica ottimizzata: " + e.getMessage());
         }
     }
 
-
     // ============================== CALCOLO DELLE METRICHE DI VALUTAZIONE ===================================
-
 
     /**
      * Calcola la complessità di McCabe della grammatica.
@@ -532,8 +511,7 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
      * - Ripetizione (parentesi graffe {})
      * - Opzionalità (parentesi quadre [])
      * - Raggruppamento (parentesi tonde ())
-
-     * Calcola la complessità di McCabe per un insieme di produzioni.
+     *
      * @param productionsMap Le produzioni da analizzare
      * @return La complessità di McCabe
      */
@@ -549,47 +527,48 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
             }
 
             // Analizza ogni produzione per elementi di complessità
-            assert productionList != null;
-            for (List<String> production : productionList) {
-                // Conta le strutture di controllo all'interno di ogni produzione
-                int openRoundBrackets = 0;
-                int openSquareBrackets = 0;
-                int openCurlyBrackets = 0;
+            if (productionList != null) {
+                for (List<String> production : productionList) {
+                    // Conta le strutture di controllo all'interno di ogni produzione
+                    int openRoundBrackets = 0;
+                    int openSquareBrackets = 0;
+                    int openCurlyBrackets = 0;
 
-                for (String element : production) {
-                    // Conta i raggruppamenti (parentesi tonde)
-                    if (element.equals("(")) {
-                        openRoundBrackets++;
-                    } else if (element.equals(")")) {
-                        if (openRoundBrackets > 0) {
-                            complexity++; // Aumenta la complessità per ogni coppia di parentesi tonde
-                            openRoundBrackets--;
+                    for (String element : production) {
+                        // Conta i raggruppamenti (parentesi tonde)
+                        if (element.equals("(")) {
+                            openRoundBrackets++;
+                        } else if (element.equals(")")) {
+                            if (openRoundBrackets > 0) {
+                                complexity++; // Aumenta la complessità per ogni coppia di parentesi tonde
+                                openRoundBrackets--;
+                            }
                         }
-                    }
 
-                    // Conta le opzionalità (parentesi quadre)
-                    else if (element.equals("[")) {
-                        openSquareBrackets++;
-                    } else if (element.equals("]")) {
-                        if (openSquareBrackets > 0) {
-                            complexity++; // Aumenta la complessità per ogni coppia di parentesi quadre
-                            openSquareBrackets--;
+                        // Conta le opzionalità (parentesi quadre)
+                        else if (element.equals("[")) {
+                            openSquareBrackets++;
+                        } else if (element.equals("]")) {
+                            if (openSquareBrackets > 0) {
+                                complexity++; // Aumenta la complessità per ogni coppia di parentesi quadre
+                                openSquareBrackets--;
+                            }
                         }
-                    }
 
-                    // Conta le ripetizioni (parentesi graffe)
-                    else if (element.equals("{")) {
-                        openCurlyBrackets++;
-                    } else if (element.equals("}")) {
-                        if (openCurlyBrackets > 0) {
-                            complexity++; // Aumenta la complessità per ogni coppia di parentesi graffe
-                            openCurlyBrackets--;
+                        // Conta le ripetizioni (parentesi graffe)
+                        else if (element.equals("{")) {
+                            openCurlyBrackets++;
+                        } else if (element.equals("}")) {
+                            if (openCurlyBrackets > 0) {
+                                complexity++; // Aumenta la complessità per ogni coppia di parentesi graffe
+                                openCurlyBrackets--;
+                            }
                         }
-                    }
 
-                    // Controlla anche per le parentesi nel testo (come nelle regole ottimizzate)
-                    else if (element.startsWith("[") && element.endsWith("]")) {
-                        complexity++; // Opzionalità incorporata
+                        // Controlla anche per le parentesi nel testo (come nelle regole ottimizzate)
+                        else if (element.startsWith("[") && element.endsWith("]")) {
+                            complexity++; // Opzionalità incorporata
+                        }
                     }
                 }
             }
@@ -598,8 +577,14 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
         return complexity;
     }
 
+    /**
+     * Calcola le metriche per l'input originale e ottimizzato
+     */
     public void calcMetrics() {
         // Calcola le metriche per l'input originale
+        Set<String> definedNonTerminals = symbolTable.getDefinedNonTerminals();
+        Set<String> definedTerminals = symbolTable.getDefinedTerminals();
+        Map<String, List<List<String>>> productions = symbolTable.getAllProductions();
 
         System.out.println("\n📐CALCOLO DELLE METRICHE SULL'INPUT ORIGINALE");
         System.out.println("Numero dei simboli non terminali: " + definedNonTerminals.size());
@@ -610,7 +595,6 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
         int totalOriginalUnitProductions = 0; // Contatore per produzioni unitarie
         int originalRHSMax = 0; // Contatore per RHS max
         int sumProductionLength = 0;
-        double RHSMean=0;
         Set<String> delimiters = new HashSet<>(Arrays.asList("(", ")", "[", "]", "{", "}"));
 
         for (List<List<String>> productionList : productions.values()) {
@@ -634,25 +618,28 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
             }
         }
 
-        // Calcola la quantità di simboli terminali e non terminali media delle produzioni sul
-        // lato destro,
-        RHSMean = (sumProductionLength+1) / totalOriginalProductions;
+        // Calcola la quantità di simboli terminali e non terminali media delle produzioni sul lato destro
+        double RHSMean = (sumProductionLength+1) / totalOriginalProductions;
 
         double alt = totalOriginalProductions / definedNonTerminals.size(); // media del numero di alternative per regola
 
         System.out.println("Numero di regole di produzione: " + totalOriginalProductions);
-        System.out.println("Numero di produzioni unitarie: " + totalOriginalUnitProductions);
+        System.out.println("Numero di produzioni unitarie: " + (totalOriginalUnitProductions-1));
         System.out.println("RHS max: " + originalRHSMax);
         System.out.println("RHS mean: " + RHSMean);
-        System.out.println("ALT " + alt);
-        System.out.println("Numero di simboli ricorsivi rilevati: " + numRecorsionSymbols);
+        System.out.println("ALT: " + alt);
+        System.out.println("Numero di simboli ricorsivi rilevati: " + numRecursionSymbols);
 
         int originalComplexity = calculateMcCabeForProductions(productions);
         System.out.println("Complessità di McCabe della grammatica originale: " + originalComplexity);
 
-
         // Calcola le metriche per l'input ottimizzato
         System.out.println("\n📐CALCOLO DELLE METRICHE SULL'INPUT OTTIMIZZATO");
+
+        // Include both original non-terminals and newly created ones
+        Set<String> optimizedNonTerminals = new HashSet<>(definedNonTerminals);
+        optimizedNonTerminals.addAll(newNonTerminals);
+
         System.out.println("Numero dei simboli non terminali: " + optimizedNonTerminals.size());
         System.out.println("Numero dei simboli terminali: " + definedTerminals.size()); // I terminali non cambiano
 
@@ -661,7 +648,6 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
         int totalOptimizedUnitProductions = 0; // Contatore per produzioni unitarie
         int optimizedRHSMax = 0; // Contatore per RHS max
         int sumProductionLengthOpt = 0;
-        double OptimizedRHSMean = 0;
 
         for (List<List<String>> productionList : optimizedProductions.values()) {
             totalOptimizedProductions += productionList.size();
@@ -672,10 +658,10 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
                         actualElements++;
                     }
                 }
-                if (production.size() == 1) { // Produzione unitaria
+                if (actualElements == 1) { // Produzione unitaria
                     totalOptimizedUnitProductions++;
                 }
-                if (production.size() > optimizedRHSMax) { // Aggiorna RHS max
+                if (actualElements > optimizedRHSMax) { // Aggiorna RHS max
                     optimizedRHSMax = actualElements;
                 }
 
@@ -683,13 +669,12 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
             }
         }
 
-        OptimizedRHSMean = (sumProductionLengthOpt+1) / totalOptimizedProductions;
+        double OptimizedRHSMean = (double) (sumProductionLengthOpt + 1) / totalOptimizedProductions;
 
         double alt_opt = totalOptimizedProductions / optimizedNonTerminals.size();
 
-
         System.out.println("Numero di regole di produzione: " + totalOptimizedProductions);
-        System.out.println("Numero di produzioni unitarie: " + totalOptimizedUnitProductions);
+        System.out.println("Numero di produzioni unitarie: " + (totalOptimizedUnitProductions-1));
         System.out.println("RHS max: " + optimizedRHSMax);
         System.out.println("RHS mean: " + OptimizedRHSMean);
         System.out.println("ALT: " + alt_opt);
@@ -697,5 +682,4 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
         int optimizedComplexity = calculateMcCabeForProductions(optimizedProductions);
         System.out.println("Complessità di McCabe della grammatica ottimizzata: " + optimizedComplexity);
     }
-
 }

@@ -1,6 +1,7 @@
 package it.unisannio.g2j;
 
 import it.unisannio.g2j.errors.CustomErrorListener;
+import it.unisannio.g2j.symbols.*;
 import it.unisannio.g2j.visitors.AntlrVisitor;
 import it.unisannio.g2j.visitors.JavaCCVisitor;
 import it.unisannio.g2j.visitors.SemanticVisitor;
