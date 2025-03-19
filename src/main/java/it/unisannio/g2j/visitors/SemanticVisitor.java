@@ -139,9 +139,6 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
         }
     }
 
-
-
-
     /**
      *  1. Verifica che tutti i non terminali usati siano definiti
      */
