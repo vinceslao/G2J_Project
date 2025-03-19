@@ -25,8 +25,9 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
 
     // Lista ordinata utilizzata per mantenere l'ordine della definizione dei non terminali per l'input ottimizzato.
     private List<String> orderedNonTerminals = new ArrayList<>();
-
     private Set<String> optimizedNonTerminals = new HashSet<>();
+
+    private int numRecorsionSymbols = 0;
 
 
     @Override
@@ -233,6 +234,7 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
 
         for (List<String> production : prods) {
             if (!production.isEmpty() && production.get(0).equals(nonTerminal)) {
+                numRecorsionSymbols++;
                 return true;
             }
         }
@@ -522,10 +524,84 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
 
     // ============================== CALCOLO DELLE METRICHE DI VALUTAZIONE ===================================
 
+
+    /**
+     * Calcola la complessità di McCabe della grammatica.
+     * La complessità aumenta di 1 per ogni:
+     * - Scelta (operatore |)
+     * - Ripetizione (parentesi graffe {})
+     * - Opzionalità (parentesi quadre [])
+     * - Raggruppamento (parentesi tonde ())
+
+     * Calcola la complessità di McCabe per un insieme di produzioni.
+     * @param productionsMap Le produzioni da analizzare
+     * @return La complessità di McCabe
+     */
+    private int calculateMcCabeForProductions(Map<String, List<List<String>>> productionsMap) {
+        int complexity = 1; // Valore base
+
+        // Conta le scelte (|) nelle produzioni
+        for (String nonTerminal : productionsMap.keySet()) {
+            List<List<String>> productionList = productionsMap.get(nonTerminal);
+            if (productionList != null && productionList.size() > 1) {
+                // Ogni produzione alternativa (oltre la prima) aumenta la complessità di 1
+                complexity += productionList.size() - 1;
+            }
+
+            // Analizza ogni produzione per elementi di complessità
+            assert productionList != null;
+            for (List<String> production : productionList) {
+                // Conta le strutture di controllo all'interno di ogni produzione
+                int openRoundBrackets = 0;
+                int openSquareBrackets = 0;
+                int openCurlyBrackets = 0;
+
+                for (String element : production) {
+                    // Conta i raggruppamenti (parentesi tonde)
+                    if (element.equals("(")) {
+                        openRoundBrackets++;
+                    } else if (element.equals(")")) {
+                        if (openRoundBrackets > 0) {
+                            complexity++; // Aumenta la complessità per ogni coppia di parentesi tonde
+                            openRoundBrackets--;
+                        }
+                    }
+
+                    // Conta le opzionalità (parentesi quadre)
+                    else if (element.equals("[")) {
+                        openSquareBrackets++;
+                    } else if (element.equals("]")) {
+                        if (openSquareBrackets > 0) {
+                            complexity++; // Aumenta la complessità per ogni coppia di parentesi quadre
+                            openSquareBrackets--;
+                        }
+                    }
+
+                    // Conta le ripetizioni (parentesi graffe)
+                    else if (element.equals("{")) {
+                        openCurlyBrackets++;
+                    } else if (element.equals("}")) {
+                        if (openCurlyBrackets > 0) {
+                            complexity++; // Aumenta la complessità per ogni coppia di parentesi graffe
+                            openCurlyBrackets--;
+                        }
+                    }
+
+                    // Controlla anche per le parentesi nel testo (come nelle regole ottimizzate)
+                    else if (element.startsWith("[") && element.endsWith("]")) {
+                        complexity++; // Opzionalità incorporata
+                    }
+                }
+            }
+        }
+
+        return complexity;
+    }
+
     public void calcMetrics() {
         // Calcola le metriche per l'input originale
 
-        System.out.println("\nCALCOLO DELLE METRICHE SULL'INPUT ORIGINALE");
+        System.out.println("\n📐CALCOLO DELLE METRICHE SULL'INPUT ORIGINALE");
         System.out.println("Numero dei simboli non terminali: " + definedNonTerminals.size());
         System.out.println("Numero dei simboli terminali: " + definedTerminals.size());
 
@@ -568,12 +644,15 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
         System.out.println("Numero di produzioni unitarie: " + totalOriginalUnitProductions);
         System.out.println("RHS max: " + originalRHSMax);
         System.out.println("RHS mean: " + RHSMean);
-
-
         System.out.println("ALT " + alt);
+        System.out.println("Numero di simboli ricorsivi rilevati: " + numRecorsionSymbols);
+
+        int originalComplexity = calculateMcCabeForProductions(productions);
+        System.out.println("Complessità di McCabe della grammatica originale: " + originalComplexity);
+
 
         // Calcola le metriche per l'input ottimizzato
-        System.out.println("\nCALCOLO DELLE METRICHE SULL'INPUT OTTIMIZZATO");
+        System.out.println("\n📐CALCOLO DELLE METRICHE SULL'INPUT OTTIMIZZATO");
         System.out.println("Numero dei simboli non terminali: " + optimizedNonTerminals.size());
         System.out.println("Numero dei simboli terminali: " + definedTerminals.size()); // I terminali non cambiano
 
@@ -614,6 +693,9 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
         System.out.println("RHS max: " + optimizedRHSMax);
         System.out.println("RHS mean: " + OptimizedRHSMean);
         System.out.println("ALT: " + alt_opt);
+
+        int optimizedComplexity = calculateMcCabeForProductions(optimizedProductions);
+        System.out.println("Complessità di McCabe della grammatica ottimizzata: " + optimizedComplexity);
     }
 
 }
