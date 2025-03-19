@@ -23,6 +23,7 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
     private List<String> lexRulesList = new ArrayList<>();
     private Map<String, String> lexRulesMap = new HashMap<>();
 
+    // Lista ordinata utilizzata per mantenere l'ordine della definizione dei non terminali per l'input ottimizzato.
     private List<String> orderedNonTerminals = new ArrayList<>();
 
     private Set<String> optimizedNonTerminals = new HashSet<>();
@@ -51,6 +52,7 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
         String nonTerminal = ctx.NON_TERM().getText();
         definedNonTerminals.add(nonTerminal);
         orderedNonTerminals.add(nonTerminal); // Aggiungi il non terminale alla lista ordinata
+        optimizedNonTerminals.add(nonTerminal); // Aggiungiamo il non terminale anche alla lista degli ottimizzati.
         productions.put(nonTerminal, new ArrayList<>()); // Inizializza la lista di produzioni per questo non terminale
         System.out.println("Visiting Parsing Rule: " + nonTerminal);
         visitProductionList(ctx.productionList(), nonTerminal); // Passa il non terminale corrente
@@ -137,19 +139,8 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
         }
     }
 
-    public void optimizeInput(){
-        // Inizializza la mappa di produzioni ottimizzate con le produzioni originali
-        optimizedProductions = new HashMap<>(productions);
 
-        // Applica le ottimizzazioni
-        eliminateLeftRecursion();
-        factorizeCommonPrefixes();
 
-        // Se sono state apportate modifiche, genera il file ottimizzato
-        if (grammarModified) {
-            generateOptimizedGrammarFile("output/optimized_input.txt");
-        }
-    }
 
     /**
      *  1. Verifica che tutti i non terminali usati siano definiti
@@ -174,7 +165,7 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
     }
 
     /**
-     * 4. Verifica produzioni non raggiungibili
+     * 3. Verifica produzioni non raggiungibili
      */
     private void checkUnreachableProductions() {
         Set<String> reachable = new HashSet<>();
@@ -207,7 +198,7 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
     }
 
     /**
-     * 5. Verifica produzioni non raggiungibili
+     * 4. Verifica produzioni non raggiungibili
      */
     private void checkUnreachableTokens() {
         // Ottieni tutti i terminali definiti
@@ -279,7 +270,6 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
 
             // Crea un nuovo non terminale per gestire la ricorsione
             String newNonTerminal = nonTerminal.replace(">", "Tail>");
-            definedNonTerminals.add(newNonTerminal);
             newNonTerminals.add(newNonTerminal);
 
             // Aggiorna la produzione originale
@@ -369,7 +359,6 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
             counter++;
         }
 
-        definedNonTerminals.add(newNonTerminal);
         newNonTerminals.add(newNonTerminal);
 
         // Crea le nuove produzioni
@@ -437,6 +426,25 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
 
     // ============================== COSTRUZIONE FILE DI INPUT OTTIMIZZATO ===================================
 
+
+    /*
+     * In questo metodo si gestisce la generazione del file di input ottimizzato.
+     */
+    public void optimizeInput(){
+        // Inizializza la mappa di produzioni ottimizzate con le produzioni originali
+        optimizedProductions = new HashMap<>(productions);
+
+        // Applica le ottimizzazioni. In questi metodi, si fa in modo che le ottimizzazioni vengano aggiunte alla mappa.
+        eliminateLeftRecursion();
+        factorizeCommonPrefixes();
+
+        // Se sono state apportate modifiche, genera il file ottimizzato
+        if (grammarModified) {
+            generateOptimizedGrammarFile();
+        }
+    }
+
+
     /**
      * Formatta una lista di produzioni in una stringa per la visualizzazione
      */
@@ -452,23 +460,9 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
             }
 
             // Aggiungi gli elementi della produzione
-            for (int j = 0; j < production.size(); j++) {
-                sb.append(production.get(j));
-
-                // Aggiungi uno spazio tra gli elementi, ma non dopo il carattere di apertura
-                // di un'operazione (come "[", "(", o "{") o prima del carattere di chiusura
-                // di un'operazione (come "]", ")", o "}")
-                String current = production.get(j);
-                boolean isOpeningBracket = current.equals("[") || current.equals("(") || current.equals("{");
-
-                if (j < production.size() - 1) {
-                    String next = production.get(j + 1);
-                    boolean isClosingBracket = next.equals("]") || next.equals(")") || next.equals("}");
-
-                    if (!isOpeningBracket && !isClosingBracket) {
-                        sb.append(" ");
-                    }
-                }
+            for (String s : production) {
+                sb.append(s);
+                sb.append(" ");
             }
 
             // Aggiungi il simbolo "|" solo se ci sono altre produzioni non vuote
@@ -480,8 +474,8 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
         return sb.toString();
     }
 
-    private void generateOptimizedGrammarFile(String filePath) {
-        try (java.io.PrintWriter writer = new java.io.PrintWriter(new java.io.FileWriter(filePath))) {
+    private void generateOptimizedGrammarFile() {
+        try (java.io.PrintWriter writer = new java.io.PrintWriter(new java.io.FileWriter("output/optimized_input.txt"))) {
             // Write lexical rules first
             for (String terminal : lexRulesList) {
                 String ruleDef = lexRulesMap.get(terminal);
@@ -522,7 +516,7 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
 
 
 
-            System.out.println("\n✅ Grammatica ottimizzata salvata nel file: " + filePath);
+            System.out.println("\n✅ Grammatica ottimizzata salvata nel file: " + "output/optimized_input.txt");
         } catch (java.io.IOException e) {
             System.err.println("❌ Errore durante la scrittura del file di grammatica ottimizzato: " + e.getMessage());
         }
@@ -534,10 +528,8 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
     public void calcMetrics() {
         // Calcola le metriche per l'input originale
 
-        int originalNonTerminalCount = (definedNonTerminals.size() - optimizedNonTerminals.size());
-
         System.out.println("\nCALCOLO DELLE METRICHE SULL'INPUT ORIGINALE");
-        System.out.println("Numero dei simboli non terminali: " + originalNonTerminalCount);
+        System.out.println("Numero dei simboli non terminali: " + definedNonTerminals.size());
         System.out.println("Numero dei simboli terminali: " + definedTerminals.size());
 
         // Calcola il numero totale di produzioni per l'input originale
@@ -569,8 +561,11 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
             }
         }
 
+        // Calcola la quantità di simboli terminali e non terminali media delle produzioni sul
+        // lato destro,
         RHSMean = (sumProductionLength+1) / totalOriginalProductions;
-        double alt = totalOriginalProductions / originalNonTerminalCount;
+
+        double alt = totalOriginalProductions / definedNonTerminals.size(); // media del numero di alternative per regola
 
         System.out.println("Numero di regole di produzione: " + totalOriginalProductions);
         System.out.println("Numero di produzioni unitarie: " + totalOriginalUnitProductions);
@@ -582,7 +577,7 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
 
         // Calcola le metriche per l'input ottimizzato
         System.out.println("\nCALCOLO DELLE METRICHE SULL'INPUT OTTIMIZZATO");
-        System.out.println("Numero dei simboli non terminali: " + definedNonTerminals.size());
+        System.out.println("Numero dei simboli non terminali: " + optimizedNonTerminals.size());
         System.out.println("Numero dei simboli terminali: " + definedTerminals.size()); // I terminali non cambiano
 
         // Calcola il numero totale di produzioni per l'input ottimizzato
@@ -614,7 +609,7 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
 
         OptimizedRHSMean = (sumProductionLengthOpt+1) / totalOptimizedProductions;
 
-        double alt_opt = totalOptimizedProductions / definedNonTerminals.size();
+        double alt_opt = totalOptimizedProductions / optimizedNonTerminals.size();
 
 
         System.out.println("Numero di regole di produzione: " + totalOptimizedProductions);
