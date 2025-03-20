@@ -2,20 +2,18 @@ package it.unisannio.g2j.visitors;
 
 import it.unisannio.g2j.G2JBaseVisitor;
 import it.unisannio.g2j.G2JParser;
+import it.unisannio.g2j.symbols.SymbolTable;
 
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 
 public class JavaCCVisitor extends G2JBaseVisitor<Void> {
 
-    private Set<String> definedNonTerminals = new HashSet<>();
-    private Set<String> definedTerminals = new HashSet<>();
-    private Set<String> usedNonTerminals = new HashSet<>();
-    private Set<String> usedTerminals = new HashSet<>();
+    private SymbolTable symbolTable = new SymbolTable();
     private StringBuilder jjFileContent = new StringBuilder();
 
     @Override
@@ -31,28 +29,27 @@ public class JavaCCVisitor extends G2JBaseVisitor<Void> {
         jjFileContent.append("  }\n");
         jjFileContent.append("}\n");
         jjFileContent.append("PARSER_END(GrammarOut)\n\n");
-        return visitChildren(ctx);
-    }
 
-    @Override
-    public Void visitRules(G2JParser.RulesContext ctx) {
-        return visitChildren(ctx);
-    }
+        // First pass to build the symbol table
+        visitChildren(ctx);
 
-    @Override
-    public Void visitRule(G2JParser.RuleContext ctx) {
-        return visitChildren(ctx);
+        // symbolTable.printSymbolTable();
+
+        return null;
     }
 
     @Override
     public Void visitParseRule(G2JParser.ParseRuleContext ctx) {
         String nonTerminal = ctx.NON_TERM().getText();
-        definedNonTerminals.add(nonTerminal);
+        symbolTable.addNonTerminal(nonTerminal);
+
         jjFileContent.append("void ").append(nonTerminal.replace("<", "").replace(">", "")).append("() :\n");
         jjFileContent.append("{\n");
         jjFileContent.append("}\n");
         jjFileContent.append("{\n");
+
         visit(ctx.productionList());
+
         jjFileContent.append("}\n\n");
         return null;
     }
@@ -70,9 +67,26 @@ public class JavaCCVisitor extends G2JBaseVisitor<Void> {
 
     @Override
     public Void visitProduction(G2JParser.ProductionContext ctx) {
+        // For tracking symbols in this production to add to the symbol table later
+        List<String> productionSymbols = new ArrayList<>();
+
         for (G2JParser.ElementContext element : ctx.element()) {
+            if (element.NON_TERM() != null) {
+                productionSymbols.add(element.NON_TERM().getText());
+            } else if (element.TERM() != null && !Objects.equals(element.TERM().getText(), "EOF")) {
+                productionSymbols.add(element.TERM().getText());
+            }
+
             visit(element);
         }
+
+        // If we're in a parse rule context, add this production to the current non-terminal
+        if (ctx.getParent() instanceof G2JParser.ProductionListContext &&
+                ctx.getParent().getParent() instanceof G2JParser.ParseRuleContext) {
+            String nonTerminal = ((G2JParser.ParseRuleContext) ctx.getParent().getParent()).NON_TERM().getText();
+            symbolTable.addProduction(nonTerminal, productionSymbols);
+        }
+
         return null;
     }
 
@@ -80,11 +94,11 @@ public class JavaCCVisitor extends G2JBaseVisitor<Void> {
     public Void visitElement(G2JParser.ElementContext ctx) {
         if (ctx.NON_TERM() != null) {
             String nonTerminal = ctx.NON_TERM().getText();
-            usedNonTerminals.add(nonTerminal);
+            symbolTable.markAsUsed(nonTerminal);
             jjFileContent.append(" ").append(nonTerminal.replace("<", "").replace(">", "")).append("()");
         } else if (ctx.TERM() != null && !Objects.equals(ctx.TERM().getText(), "EOF")) {
             String terminal = ctx.TERM().getText();
-            usedTerminals.add(terminal);
+            symbolTable.markAsUsed(terminal);
             jjFileContent.append(" <").append(terminal).append(">");
         } else if (ctx.grouping() != null) {
             visit(ctx.grouping());
@@ -123,14 +137,39 @@ public class JavaCCVisitor extends G2JBaseVisitor<Void> {
     @Override
     public Void visitLexRule(G2JParser.LexRuleContext ctx) {
         String terminal = ctx.TERM().getText();
-        definedTerminals.add(terminal);
+
+        // Build regex definition for the symbol table
+        StringBuilder regexDef = new StringBuilder();
+        for (G2JParser.RegexContext regex : ctx.regex()) {
+            // Store original position to restore after
+            int originalLength = jjFileContent.length();
+
+            // Use visitor to build the regex
+            visit(regex);
+
+            // Extract the regex from the jjFileContent
+            String regexContent = jjFileContent.substring(originalLength);
+            regexDef.append(regexContent);
+
+            // Restore jjFileContent
+            jjFileContent.setLength(originalLength);
+        }
+
+        // Add terminal to symbol table with its definition
+        symbolTable.addTerminal(terminal, regexDef.toString());
+
+        // Now build the actual token definition in the JJ file
         jjFileContent.append("TOKEN : {\n");
         jjFileContent.append("  <").append(terminal).append(" : ");
+
+        // Re-visit regex nodes to add their content to jjFileContent
         for (G2JParser.RegexContext regex : ctx.regex()) {
             visit(regex);
         }
+
         jjFileContent.append(">\n");
         jjFileContent.append("}\n\n");
+
         return null;
     }
 
@@ -157,7 +196,6 @@ public class JavaCCVisitor extends G2JBaseVisitor<Void> {
      * Converte una classe di caratteri (es. [a-zA-Z]) nel formato ["a"-"z", "A"-"Z"].
      */
     private String convertCharClass(String charClass) {
-
         // Prendiamo in considerazione la sottostringa senza le parentesi
         charClass = charClass.substring(1, charClass.length() - 1);
 
@@ -210,27 +248,30 @@ public class JavaCCVisitor extends G2JBaseVisitor<Void> {
     public Void visitPrimary(G2JParser.PrimaryContext ctx) {
         if (ctx.CHAR() != null) {
             jjFileContent.append("\"").append(ctx.CHAR().getText()).append("\"");
-
         } else if (ctx.ESCAPED_CHAR() != null) {
             jjFileContent.append(ctx.ESCAPED_CHAR().getText());
-
         } else if (ctx.DOT() != null) {
             jjFileContent.append(".");
-
         } else if (ctx.CHAR_CLASS() != null) {
             // La classe di caratteri (CHAR_CLASSES) viene trasformata nel formato ["a"-"z", "A"-"Z"]
             String charClass = ctx.CHAR_CLASS().getText();
             jjFileContent.append(convertCharClass(charClass));
-
         } else if (ctx.LEFT_ROUND_BRACKET() != null) {
             jjFileContent.append("(");
             visit(ctx.regex());
             jjFileContent.append(")");
-
         } else if (ctx.STRING() != null) {
             jjFileContent.append(ctx.STRING().getText());
         }
         return null;
+    }
+
+    /**
+     * Gets the symbol table built during traversal
+     * @return Symbol table containing grammar symbols
+     */
+    public SymbolTable getSymbolTable() {
+        return symbolTable;
     }
 
     public void writeOutputToFile(String fileName) {
@@ -241,4 +282,5 @@ public class JavaCCVisitor extends G2JBaseVisitor<Void> {
             System.err.println("Errore durante la scrittura del file " + fileName + ": " + e.getMessage());
         }
     }
+
 }
