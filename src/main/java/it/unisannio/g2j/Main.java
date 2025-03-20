@@ -1,16 +1,16 @@
 package it.unisannio.g2j;
 
-import it.unisannio.g2j.errors.CustomErrorListener;
-import it.unisannio.g2j.symbols.*;
+import it.unisannio.g2j.errors.CustomErrorStrategy;
 import it.unisannio.g2j.visitors.AntlrVisitor;
 import it.unisannio.g2j.visitors.JavaCCVisitor;
 import it.unisannio.g2j.visitors.SemanticVisitor;
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Main {
     public static void main(String[] args) throws Exception {
@@ -23,17 +23,22 @@ public class Main {
         CommonTokenStream tokens = new CommonTokenStream(lexer);
         G2JParser parser = new G2JParser(tokens);
 
-        // Rimuovi gli error listener di default e aggiungi il CustomErrorListener
-        parser.removeErrorListeners();
-        parser.addErrorListener(new CustomErrorListener());
+        ANTLRErrorStrategy errorStrategy = new CustomErrorStrategy();
+        parser.setErrorHandler(errorStrategy);
+
+        // Disabilita l'opzione BailErrorStrategy che causerebbe l'arresto al primo errore
+        parser.setBuildParseTree(true);
+
+        System.out.println("Inizio parsing con recovery attivato...");
 
         // Esegui il parsing
         ParseTree tree = parser.grammarFile();
 
-        if (parser.getNumberOfSyntaxErrors() > 0) {
-            System.err.println("Numero errori sintattici: "+parser.getNumberOfSyntaxErrors());
-            System.err.println("Rilevato un errore sintattico, quindi analisi interrotta.");
+        if (CustomErrorStrategy.sintaxErrorNum > 0) {
+            System.err.println("Gli errori sono stati gestiti e il parsing è continuato dove possibile.");
             return;
+        } else {
+            System.out.println("Parsing completato senza errori sintattici.");
         }
 
         // Analisi semantica e ottimizzazione dell'input
