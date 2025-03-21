@@ -11,6 +11,7 @@ public class Symbol {
     private String definition;
     private List<List<String>> productions;
     private boolean used;
+    private boolean defined;
 
     /**
      * Creates a new symbol
@@ -21,6 +22,7 @@ public class Symbol {
         this.name = name;
         this.type = type;
         this.used = false;
+        this.defined = false;
     }
 
     /**
@@ -86,4 +88,23 @@ public class Symbol {
     public void setUsed(boolean used) {
         this.used = used;
     }
+
+    public boolean isDefined() {
+        return defined;
+    }
+
+    public void setDefined(boolean defined) {
+        this.defined = defined;
+    }
+
+    @Override
+    public String toString() {
+        return "\tname='" + name + "',\n" +
+                "\ttype=" + type + ",\n" +
+                "\tdefinition='" + definition + "',\n" +
+                "\tproductions=" + productions + ",\n" +
+                "\tused=" + used + ",\n" +
+                "\tdefined=" + defined + "\n";
+    }
+
 }

@@ -15,48 +15,46 @@ public class SymbolTable {
 
     /**
      * Adds a terminal symbol to the table
-     * @param name Terminal symbol name
+     *
+     * @param name       Terminal symbol name
      * @param definition Terminal's regex definition
-     * @return True if the symbol was added, false if it already existed
      */
-    public boolean addTerminal(String name, String definition) {
+    public void addTerminal(String name, String definition) {
         if (symbols.containsKey(name)) {
-            return false;
+            return;
         }
 
         Symbol symbol = new Symbol(name, SymbolType.TERMINAL);
         symbol.setDefinition(definition);
         symbols.put(name, symbol);
         orderedTerminals.add(name);
-        return true;
     }
 
     /**
      * Adds a non-terminal symbol to the table
+     *
      * @param name Non-terminal symbol name
-     * @return True if the symbol was added, false if it already existed
      */
-    public boolean addNonTerminal(String name) {
+    public void addNonTerminal(String name) {
         if (symbols.containsKey(name)) {
-            return false;
+            return;
         }
 
         Symbol symbol = new Symbol(name, SymbolType.NON_TERMINAL);
         symbols.put(name, symbol);
         orderedNonTerminals.add(name);
-        return true;
     }
 
     /**
      * Adds a production rule to a non-terminal
+     *
      * @param nonTerminal Name of the non-terminal
-     * @param production List of symbols in the production
-     * @return True if the production was added successfully
+     * @param production  List of symbols in the production
      */
-    public boolean addProduction(String nonTerminal, List<String> production) {
+    public void addProduction(String nonTerminal, List<String> production) {
         Symbol symbol = symbols.get(nonTerminal);
         if (symbol == null || symbol.getType() != SymbolType.NON_TERMINAL) {
-            return false;
+            return;
         }
 
         if (symbol.getProductions() == null) {
@@ -72,10 +70,7 @@ public class SymbolTable {
             } else if (isTerminal(element)) {
                 markAsUsed(element);
             }
-            // Skip delimiters and other structural elements like (), [], {}
         }
-
-        return true;
     }
 
     /**
@@ -83,9 +78,21 @@ public class SymbolTable {
      * @param name Symbol name
      */
     public void markAsUsed(String name) {
+        addNonTerminal(name);
+        Symbol symbol = symbols.get(name);
+        symbol.setUsed(true);
+    }
+
+    public void markAsUsedTerminal(String name) {
+        addTerminal(name, null);
+        Symbol symbol = symbols.get(name);
+        symbol.setUsed(true);
+    }
+
+    public void markAsDefined(String name) {
         Symbol symbol = symbols.get(name);
         if (symbol != null) {
-            symbol.setUsed(true);
+            symbol.setDefined(true);
         }
     }
 
@@ -96,7 +103,7 @@ public class SymbolTable {
     public Set<String> getDefinedTerminals() {
         Set<String> result = new HashSet<>();
         for (Symbol symbol : symbols.values()) {
-            if (symbol.getType() == SymbolType.TERMINAL) {
+            if (symbol.getType() == SymbolType.TERMINAL && symbol.isDefined()) {
                 result.add(symbol.getName());
             }
         }
@@ -110,7 +117,7 @@ public class SymbolTable {
     public Set<String> getDefinedNonTerminals() {
         Set<String> result = new HashSet<>();
         for (Symbol symbol : symbols.values()) {
-            if (symbol.getType() == SymbolType.NON_TERMINAL) {
+            if (symbol.getType() == SymbolType.NON_TERMINAL && symbol.isDefined()) {
                 result.add(symbol.getName());
             }
         }
@@ -152,7 +159,7 @@ public class SymbolTable {
      */
     public String getTerminalDefinition(String name) {
         Symbol symbol = symbols.get(name);
-        if (symbol != null && symbol.getType() == SymbolType.TERMINAL) {
+        if (symbol != null && symbol.getType() == SymbolType.TERMINAL && symbol.isDefined()) {
             return symbol.getDefinition();
         }
         return null;
@@ -236,30 +243,8 @@ public class SymbolTable {
     public void printSymbolTable() {
         System.out.println("\n=== TABELLA DEI SIMBOLI ===");
 
-        // Stampa i terminali
-        System.out.println("\n--- TERMINALI ---");
-        for (String terminal : orderedTerminals) {
-            Symbol symbol = symbols.get(terminal);
-            System.out.println("\nTerminale: " + terminal);
-            System.out.println("  Definizione: " + symbol.getDefinition());
-        }
-
-        // Stampa i non-terminali
-        System.out.println("\n--- NON TERMINALI ---");
-        for (String nonTerminal : orderedNonTerminals) {
-            Symbol symbol = symbols.get(nonTerminal);
-            System.out.println("\nNon Terminale: " + nonTerminal);
-
-            // Stampa le produzioni associate al non-terminale
-            List<List<String>> productions = symbol.getProductions();
-            if (productions != null && !productions.isEmpty()) {
-                System.out.println("  Produzioni:");
-                for (List<String> production : productions) {
-                    System.out.println("    " + String.join(" ", production));
-                }
-            } else {
-                System.out.println("  Nessuna produzione associata.");
-            }
+        for(Symbol symbol : symbols.values()) {
+            System.out.println(symbol);
         }
 
         System.out.println("\n=== FINE TABELLA DEI SIMBOLI ===\n");

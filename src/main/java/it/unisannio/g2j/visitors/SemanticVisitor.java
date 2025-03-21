@@ -45,8 +45,9 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
     public Void visitParseRule(G2JParser.ParseRuleContext ctx) {
         String nonTerminal = ctx.NON_TERM().getText();
         symbolTable.addNonTerminal(nonTerminal);
+        symbolTable.markAsDefined(nonTerminal);
         visitProductionList(ctx.productionList(), nonTerminal);
-        return null;
+        return visitChildren(ctx);
     }
 
     private void visitProductionList(G2JParser.ProductionListContext ctx, String currentNonTerminal) {
@@ -71,7 +72,7 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
         } else if (ctx.TERM() != null && !Objects.equals(ctx.TERM().getText(), "EOF")) {
             String term = ctx.TERM().getText();
             elements.add(term);
-            symbolTable.markAsUsed(term);
+            symbolTable.markAsUsedTerminal(term);
         } else if (ctx.grouping() != null) {
             visitGrouping(ctx.grouping(), elements);
         } else if (ctx.optionality() != null) {
@@ -104,6 +105,7 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
         String terminal = ctx.TERM().getText();
         String regexDef = ctx.getText().substring(terminal.length() + "::=".length());
         symbolTable.addTerminal(terminal, regexDef);
+        symbolTable.markAsDefined(terminal);
         return visitChildren(ctx);
     }
 
@@ -111,91 +113,86 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
 
     public void checkSemantics() {
         try {
+            symbolTable.markAsUsed("<Program>");
+
+            checkNotDefinedNonTerminals();
+            checkNotDefinedTerminals();
             checkNotUsedNonTerminals();
             checkNotUsedTerminals();
-            checkUnreachableProductions();
-            checkUnreachableTokens();
 
             symbolTable.printSymbolTable();
         } catch(SemanticException e) {
             System.err.println("❌ Catturata eccezione di tipo SemanticException 😡");
             System.err.println(e.getMessage());
-            System.exit(1);
+       //     System.exit(1);
         }
     }
 
     /**
-     * 1. Verify that all used non-terminals are defined
+     * 1. Verify that all used non-terminals are defined FATTO
      */
-    private void checkNotUsedNonTerminals() {
+    private void checkNotDefinedNonTerminals() {
         Set<String> usedNonTerminals = symbolTable.getUsedNonTerminals();
         Set<String> definedNonTerminals = symbolTable.getDefinedNonTerminals();
+        ArrayList<String> errors = new ArrayList<>();
 
         for (String nonTerminal : usedNonTerminals) {
             if (!definedNonTerminals.contains(nonTerminal)) {
-                throw new SemanticException("Errore semantico: Non terminale non definito - " + nonTerminal);
+                errors.add(nonTerminal);
             }
+        }
+        if(!errors.isEmpty()) {
+            throw new SemanticException("Errore semantico: Non terminale usato ma NON DEFINITO - " + errors);
         }
     }
 
     /**
      * 2. Verify that all used terminals are defined
      */
-    private void checkNotUsedTerminals() {
+    private void checkNotDefinedTerminals() {
         Set<String> usedTerminals = symbolTable.getUsedTerminals();
         Set<String> definedTerminals = symbolTable.getDefinedTerminals();
+        ArrayList<String> errors = new ArrayList<>();
 
         for (String terminal : usedTerminals) {
             if (!definedTerminals.contains(terminal)) {
-                throw new SemanticException("Errore semantico: Terminale non definito - " + terminal);
+                errors.add(terminal);
             }
+        }
+        if(!errors.isEmpty()) {
+            throw new SemanticException("Errore semantico: Terminale usato ma NON DEFINITO - " + errors);
         }
     }
 
-    /**
-     * 3. Verify unreachable productions
-     */
-    private void checkUnreachableProductions() {
-        Set<String> reachable = new HashSet<>();
-        reachable.add("<Program>"); // Starting symbol
+    private void checkNotUsedNonTerminals(){
+        Set<String> usedNonTerminals = symbolTable.getUsedNonTerminals();
+        Set<String> definedNonTerminals = symbolTable.getDefinedNonTerminals();
+        ArrayList<String> errors = new ArrayList<>();
 
-        boolean changed;
-        do {
-            changed = false;
-            Set<String> reachableCopy = new HashSet<>(reachable); // Temporary copy
-
-            for (String nonTerminal : reachableCopy) {
-                List<List<String>> nonTermProds = symbolTable.getProductions(nonTerminal);
-
-                for (List<String> production : nonTermProds) {
-                    for (String symbol : production) {
-                        if (symbolTable.isNonTerminal(symbol) && !reachable.contains(symbol)) {
-                            reachable.add(symbol);
-                            changed = true;
-                        }
-                    }
-                }
+        for (String nonTerminal : definedNonTerminals) {
+            if (!usedNonTerminals.contains(nonTerminal)) {
+                errors.add(nonTerminal);
             }
-        } while (changed);
-
-        for (String nonTerminal : symbolTable.getDefinedNonTerminals()) {
-            if (!reachable.contains(nonTerminal)) {
-                throw new SemanticException("⚠️ Errore semantico: Produzione non raggiungibile - " + nonTerminal);
-            }
+        }
+        if(!errors.isEmpty()) {
+            throw new SemanticException("Errore semantico: Non terminale definito ma NON USATO - " + errors);
         }
     }
 
-    /**
-     * 4. Verify unreachable tokens
-     */
-    private void checkUnreachableTokens() {
-        Set<String> definedTokens = symbolTable.getDefinedTerminals();
-        Set<String> usedTokens = symbolTable.getUsedTerminals();
+    private void checkNotUsedTerminals(){
+        Set<String> usedTerminals = symbolTable.getUsedTerminals();
+        Set<String> definedTerminals = symbolTable.getDefinedTerminals();
+        ArrayList<String> errors = new ArrayList<>();
 
-        for (String token : definedTokens) {
-            if (!usedTokens.contains(token)) {
-                throw new SemanticException("⚠️ Errore semantico: Token non raggiungibile - " + token);
+
+        for (String terminal : definedTerminals) {
+            if (!usedTerminals.contains(terminal)) {
+                errors.add(terminal);
             }
+        }
+
+        if(!errors.isEmpty()){
+            throw new SemanticException("Errore semantico: Terminale definito ma NON USATO - " + errors);
         }
     }
 

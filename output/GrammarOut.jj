@@ -97,23 +97,35 @@ void Statement() :
  IfThen() |
  RepeatUntil()}
 
-void CallWrite() :
-{
-}
-{
- <WRITE> <LEF_PAR> <ID> <RIGHT_PAR>}
-
 void CallRead() :
 {
 }
 {
  <READ> <LEF_PAR> <ID> <RIGHT_PAR>}
 
+void CallWrite() :
+{
+}
+{
+ <WRITE> <LEF_PAR> <ID> <RIGHT_PAR>}
+
 void Assignment() :
 {
 }
 {
  <ID> <ASSIGNMENT> Expression()}
+
+void IfThen() :
+{
+}
+{
+ <IF> Condition() <THEN> Statements() [ IfThenSuffix()]}
+
+void RepeatUntil() :
+{
+}
+{
+ <REPEAT> Statements() <UNTIL> Condition()}
 
 void Expression() :
 {
@@ -135,23 +147,11 @@ void Factor() :
  <NUMBER> |
  ( <LEF_PAR> Expression() <RIGHT_PAR>)}
 
-void IfThen() :
-{
-}
-{
- <IF> Condition() <THEN> Statements() [ IfThenSuffix()]}
-
 void Condition() :
 {
 }
 {
  Expression() <COMPARISON> Expression()}
-
-void RepeatUntil() :
-{
-}
-{
- <REPEAT> Statements() <UNTIL> Condition()}
 
 void MulDivExprTail() :
 {
