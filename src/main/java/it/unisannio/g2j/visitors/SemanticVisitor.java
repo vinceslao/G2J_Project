@@ -129,7 +129,7 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
     }
 
     /**
-     * 1. Verify that all used non-terminals are defined FATTO
+     * 1. Verifica che tutti i non terminali usati siano definiti.
      */
     private void checkNotDefinedNonTerminals() {
         Set<String> usedNonTerminals = symbolTable.getUsedNonTerminals();
@@ -147,7 +147,7 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
     }
 
     /**
-     * 2. Verify that all used terminals are defined
+     * 2. Verifica che tutti i terminali usati siano definiti.
      */
     private void checkNotDefinedTerminals() {
         Set<String> usedTerminals = symbolTable.getUsedTerminals();
@@ -164,6 +164,9 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
         }
     }
 
+    /**
+     * 3. Verifica che tutti i non terminali definiti siano usati.
+     */
     private void checkNotUsedNonTerminals(){
         Set<String> usedNonTerminals = symbolTable.getUsedNonTerminals();
         Set<String> definedNonTerminals = symbolTable.getDefinedNonTerminals();
@@ -179,6 +182,9 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
         }
     }
 
+    /**
+     * 4. Verifica che tutti i terminali definiti siano usati.
+     */
     private void checkNotUsedTerminals(){
         Set<String> usedTerminals = symbolTable.getUsedTerminals();
         Set<String> definedTerminals = symbolTable.getDefinedTerminals();
@@ -196,10 +202,10 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
         }
     }
 
-    // ============================== OPTIMIZATIONS =================================
+    // ============================== OTTIMIZZAZIONI =================================
 
     /**
-     * 1. Eliminate left recursion
+     * 1. Eliminazione della ricorsione a sinistra
      */
     private void eliminateLeftRecursion() {
         // Initialize optimized productions with original ones if not already done
@@ -295,7 +301,7 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
     }
 
     /**
-     * 2. Factorize common prefixes
+     * 2. Fattorizzazione dei prefissi comuni.
      */
     private void factorizeCommonPrefixes() {
         boolean factorizationApplied;
@@ -326,9 +332,6 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
         } while (factorizationApplied);  // Continue until no more factorizations are applied
     }
 
-    /**
-     * Apply common prefix factorization
-     */
     private void applyFactorization(String nonTerminal, List<String> commonPrefix, List<List<String>> productionsForNT) {
         // Create a new non-terminal to handle suffixes
         String newNonTerminal = nonTerminal.replace(">", "Suffix>");
@@ -368,9 +371,6 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
         System.out.println(newNonTerminal + " ::= " + formatOptimizedProduction(suffixProductions) + " ;");
     }
 
-    /**
-     * Find the longest common prefix among a list of productions
-     */
     private List<String> findLongestCommonPrefix(List<List<String>> productions) {
         if (productions.isEmpty()) {
             return Collections.emptyList();
@@ -386,9 +386,6 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
         return commonPrefix;
     }
 
-    /**
-     * Get the common prefix between two lists
-     */
     private List<String> getCommonPrefix(List<String> list1, List<String> list2) {
         List<String> prefix = new ArrayList<>();
         int minLength = Math.min(list1.size(), list2.size());
@@ -402,11 +399,8 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
         return prefix;
     }
 
-    // ============================== Optimized Input Generation ===================================
+    // ============================== GENERAZIONE INPUT OTTIMIZZATO ===================================
 
-    /**
-     * Handles optimized input file generation
-     */
     public void optimizeInput() {
         // Initialize optimized productions with original ones
         optimizedProductions = new HashMap<>(symbolTable.getAllProductions());
@@ -422,7 +416,7 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
     }
 
     /**
-     * Format a list of productions as a string for display
+     * Formatta una lista di produzioni come stringa.
      */
     private String formatOptimizedProduction(List<List<String>> productions) {
         StringBuilder sb = new StringBuilder();
@@ -450,9 +444,6 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
         return sb.toString();
     }
 
-    /**
-     * Generate optimized grammar file
-     */
     private void generateOptimizedGrammarFile() {
         try (java.io.PrintWriter writer = new java.io.PrintWriter(new java.io.FileWriter("output/optimized_input.txt"))) {
             // Write lexical rules first
