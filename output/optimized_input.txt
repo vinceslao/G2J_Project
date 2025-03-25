@@ -15,7 +15,7 @@ COMPARISON::="=="|"!="|"<"|"<="|">"|">=";
 ID::=[a-zA-Z][a-zA-Z0-9]*;
 NUMBER::=[0-9]+;
 
-<Program> ::= <Statements>  EOF ;
+<Program> ::= { [ <Statements> ] }  EOF ;
 <Statements> ::= <Statement> [<StatementsSuffix>]  ;
 <Statement> ::= <CallRead>  | <CallWrite>  | <Assignment>  | <IfThen>  | <RepeatUntil>  ;
 <CallRead> ::= READ LEF_PAR ID RIGHT_PAR  ;

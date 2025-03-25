@@ -25,13 +25,15 @@ productionList: production (PIPE production)*;
 production: element+ ;
 
 // Elemento di una produzione
-element: NON_TERM | TERM | grouping | optionality | repetivity;
+element: NON_TERM | TERM |  rep_opt | grouping | optionality | repetivity;
 
 grouping: LEFT_ROUND_BRACKET production RIGHT_ROUND_BRACKET ;
 
 optionality: LEFT_SQUARE_BRACKET production RIGHT_SQUARE_BRACKET;
 
 repetivity: LEFT_CURLY_BRACKET production RIGHT_CURLY_BRACKET;
+
+rep_opt: LEFT_CURLY_BRACKET LEFT_SQUARE_BRACKET production RIGHT_SQUARE_BRACKET RIGHT_CURLY_BRACKET;
 
 // Definizione di una regola lessicale
 lexRule: TERM ASSIGN regex+;

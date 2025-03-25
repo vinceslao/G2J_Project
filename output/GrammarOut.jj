@@ -79,7 +79,7 @@ void Program() :
 {
 }
 {
- Statements()}
+( Statements())* <EOF>}
 
 void Statements() :
 {

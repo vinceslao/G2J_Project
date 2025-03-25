@@ -131,7 +131,7 @@ public class AntlrVisitor extends G2JBaseVisitor<Void> {
             String terminal = ctx.TERM().getText();
             symbolTable.markAsUsed(terminal);
             g4FileContent.append(terminal).append(" ");
-        } else if (ctx.grouping() != null || ctx.optionality() != null || ctx.repetivity() != null) {
+        } else if (ctx.grouping() != null || ctx.optionality() != null || ctx.repetivity() != null || ctx.rep_opt() != null) {
             visitChildren(ctx);
         }
         return null;
@@ -155,6 +155,14 @@ public class AntlrVisitor extends G2JBaseVisitor<Void> {
 
     @Override
     public Void visitRepetivity(G2JParser.RepetivityContext ctx) {
+        g4FileContent.append("(");
+        visit(ctx.production());
+        g4FileContent.append(")+");
+        return null;
+    }
+
+    @Override
+    public Void visitRep_opt(G2JParser.Rep_optContext ctx) {
         g4FileContent.append("(");
         visit(ctx.production());
         g4FileContent.append(")*");

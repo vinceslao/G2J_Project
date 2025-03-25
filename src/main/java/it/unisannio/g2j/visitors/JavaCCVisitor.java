@@ -50,6 +50,10 @@ public class JavaCCVisitor extends G2JBaseVisitor<Void> {
 
         visit(ctx.productionList());
 
+        if (nonTerminal.equals("<Program>")) {
+            jjFileContent.append(" <EOF>");
+        }
+
         jjFileContent.append("}\n\n");
         return null;
     }
@@ -106,6 +110,8 @@ public class JavaCCVisitor extends G2JBaseVisitor<Void> {
             visit(ctx.optionality());
         } else if (ctx.repetivity() != null) {
             visit(ctx.repetivity());
+        } else if (ctx.rep_opt() != null) {
+            visit(ctx.rep_opt());
         }
         return null;
     }
@@ -128,9 +134,18 @@ public class JavaCCVisitor extends G2JBaseVisitor<Void> {
 
     @Override
     public Void visitRepetivity(G2JParser.RepetivityContext ctx) {
-        jjFileContent.append(" {");
+        jjFileContent.append(" (");
         visit(ctx.production());
-        jjFileContent.append("}");
+        jjFileContent.append(")+ ");
+        return null;
+    }
+
+    public Void visitRep_opt(G2JParser.Rep_optContext ctx) {
+
+        jjFileContent.append("(");
+        visit(ctx.production());
+        jjFileContent.append(")*");
+
         return null;
     }
 

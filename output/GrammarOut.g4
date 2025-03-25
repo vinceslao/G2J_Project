@@ -16,7 +16,7 @@ UNTIL : 'UNTIL' ;
 COMPARISON : '=='  | '!='  | '<'  | '<='  | '>'  | '>=' ;
 ID : [a-zA-Z][a-zA-Z0-9]*;
 NUMBER : [0-9]+;
-program : statements EOF ;
+program : (statements )*EOF ;
 statements : statement (statementsSuffix )?;
 statement : callRead  | callWrite  | assignment  | ifThen  | repeatUntil ;
 callRead : READ LEF_PAR ID RIGHT_PAR ;

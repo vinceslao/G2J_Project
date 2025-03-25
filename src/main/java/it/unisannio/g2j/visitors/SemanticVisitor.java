@@ -79,6 +79,8 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
             visitOptionality(ctx.optionality(), elements);
         } else if (ctx.repetivity() != null) {
             visitRepetivity(ctx.repetivity(), elements);
+        } else if (ctx.rep_opt() != null) {
+            visitRep_opt(ctx.rep_opt(), elements);
         }
     }
 
@@ -98,6 +100,14 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
         elements.add(ctx.LEFT_CURLY_BRACKET().getText()); // Add opening bracket
         visitProduction(ctx.production(), elements);      // Visit internal production
         elements.add(ctx.RIGHT_CURLY_BRACKET().getText()); // Add closing bracket
+    }
+
+    private void visitRep_opt(G2JParser.Rep_optContext ctx, List<String> elements) {
+        elements.add(ctx.LEFT_CURLY_BRACKET().getText());
+        elements.add(ctx.LEFT_SQUARE_BRACKET().getText());
+        visitProduction(ctx.production(), elements);
+        elements.add(ctx.RIGHT_SQUARE_BRACKET().getText());
+        elements.add(ctx.RIGHT_CURLY_BRACKET().getText());
     }
 
     @Override
