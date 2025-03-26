@@ -225,7 +225,7 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
 
         for (String nonTerminal : new HashSet<>(symbolTable.getDefinedNonTerminals())) {
             if (hasLeftRecursion(nonTerminal)) {
-                System.out.println("\n\n⚠️ Ricorsione sinistra rilevata per - " + nonTerminal);
+                System.out.println("\n⚠️ Ricorsione sinistra rilevata per - " + nonTerminal);
                 applyLeftRecursionElimination(nonTerminal);
                 grammarModified = true;
             }
@@ -260,7 +260,7 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
 
         if (!leftRecursiveProductions.isEmpty()) {
             // Print original rule
-            System.out.println("\nRegola che contiene la ricorsione a sinistra:");
+            System.out.println("Regola che contiene la ricorsione a sinistra:");
             System.out.print(nonTerminal + " ::= ");
             for (int i = 0; i < optimizedProductions.get(nonTerminal).size(); i++) {
                 List<String> production = optimizedProductions.get(nonTerminal).get(i);
