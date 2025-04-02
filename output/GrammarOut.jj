@@ -155,14 +155,6 @@ TOKEN : {
   <NUMBER_LITERAL : (["0"-"9"])+(("."(["0"-"9"])+))?>
 }
 
-TOKEN : {
-  <COMPARISON :  |  |  |  |  | >
-}
-
-TOKEN : {
-  <LOGIC_OP :  | >
-}
-
 void Program() :
 {
 }
@@ -231,11 +223,29 @@ void Condition() :
 {
  Expression() [ ConditionTail()]}
 
+void Logic_op() :
+{
+}
+{
+ <AND> |
+ <OR>}
+
 void Expression() :
 {
 }
 {
  Term() [ ExpressionTail()]}
+
+void Comparison_op() :
+{
+}
+{
+ <EQUALS> |
+ <NOT_EQUALS> |
+ <LESS_THAN> |
+ <GREATER_THAN> |
+ <LESS_EQUAL> |
+ <GREATER_EQUAL>}
 
 void Term() :
 {
@@ -326,13 +336,13 @@ void ConditionTail() :
 {
 }
 {
- <LOGIC_OP> Expression() [ ConditionTail()]}
+ Logic_op() Expression() [ ConditionTail()]}
 
 void ExpressionTail() :
 {
 }
 {
- <COMPARISON> Term() [ ExpressionTail()]}
+ Comparison_op() Term() [ ExpressionTail()]}
 
 void Value_ListTail() :
 {

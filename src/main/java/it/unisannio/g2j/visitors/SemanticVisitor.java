@@ -124,15 +124,6 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
         return visitChildren(ctx);
     }
 
-    @Override
-    public Void visitPrimary (G2JParser.PrimaryContext ctx) {
-        if (ctx.TERM() != null && !Objects.equals(ctx.TERM().getText(), "EOF")) {
-        String terminal = ctx.TERM().getText();
-        symbolTable.markAsUsed(terminal);
-        }
-        return visitChildren(ctx);
-    }
-
     // ==================== Semantic Analysis Methods ====================
 
     public void checkSemantics() {

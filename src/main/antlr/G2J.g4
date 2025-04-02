@@ -51,7 +51,6 @@ primary    : CHAR                // Un carattere normale
            | CHAR_CLASS        // Una classe di caratteri come [a-zA-Z_]
            | LEFT_ROUND_BRACKET regex RIGHT_ROUND_BRACKET    // Un gruppo tra parentesi
            | STRING
-           | TERM
            ;
 
 

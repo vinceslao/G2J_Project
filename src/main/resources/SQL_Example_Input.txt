@@ -35,8 +35,6 @@ DOT ::= "." ;
 STAR ::= "*" ;
 IDENTIFIER ::= [a-zA-Z][a-zA-Z0-9_]* ;
 NUMBER_LITERAL ::= [0-9]+ ("." [0-9]+)? ;
-COMPARISON ::= EQUALS | NOT_EQUALS | LESS_THAN | GREATER_THAN | LESS_EQUAL | GREATER_EQUAL ;
-LOGIC_OP ::= AND | OR ;
 
 /* Regole di produzione */
 <Program> ::= <Program> <Statement> SEMICOLON
@@ -60,10 +58,13 @@ LOGIC_OP ::= AND | OR ;
 <Table_List> ::= IDENTIFIER
                | IDENTIFIER COMMA <Table_List> ;
 
-<Condition> ::= <Condition> LOGIC_OP <Expression>
+<Condition> ::= <Condition> <Logic_op> <Expression>
               | <Expression> ;
 
-<Expression> ::= <Expression> COMPARISON <Term>
+
+<Logic_op> ::= AND | OR ;
+
+<Expression> ::= <Expression> <Comparison_op> <Term>
                | <Term> ;
 
 <Term> ::= IDENTIFIER
@@ -103,3 +104,5 @@ LOGIC_OP ::= AND | OR ;
 <Constraint> ::= NOT NULL
                | PRIMARY KEY
                | UNIQUE ;
+
+<Comparison_op> ::= EQUALS | NOT_EQUALS | LESS_THAN | GREATER_THAN | LESS_EQUAL | GREATER_EQUAL;
