@@ -1,0 +1,105 @@
+/* Token */
+SEMICOLON ::= ";" ;
+SELECT ::= "SELECT" ;
+FROM ::= "FROM" ;
+WHERE ::= "WHERE" ;
+AND ::= "AND" ;
+OR ::= "OR" ;
+INSERT ::= "INSERT" ;
+INTO ::= "INTO" ;
+VALUES ::= "VALUES" ;
+UPDATE ::= "UPDATE" ;
+SET ::= "SET" ;
+DELETE ::= "DELETE" ;
+CREATE ::= "CREATE" ;
+TABLE ::= "TABLE" ;
+PRIMARY ::= "PRIMARY" ;
+KEY ::= "KEY" ;
+NOT ::= "NOT" ;
+NULL ::= "NULL" ;
+UNIQUE ::= "UNIQUE" ;
+INT ::= "INT" ;
+VARCHAR ::= "VARCHAR" ;
+DATE ::= "DATE" ;
+BOOLEAN ::= "BOOLEAN" ;
+EQUALS ::= "=" ;
+NOT_EQUALS ::= "<>" ;
+LESS_THAN ::= "<" ;
+GREATER_THAN ::= ">" ;
+LESS_EQUAL ::= "<=" ;
+GREATER_EQUAL ::= ">=" ;
+COMMA ::= "," ;
+LEFT_PAREN ::= "(" ;
+RIGHT_PAREN ::= ")" ;
+DOT ::= "." ;
+STAR ::= "*" ;
+IDENTIFIER ::= [a-zA-Z][a-zA-Z0-9_]* ;
+NUMBER_LITERAL ::= [0-9]+ ("." [0-9]+)? ;
+COMPARISON ::= EQUALS | NOT_EQUALS | LESS_THAN | GREATER_THAN | LESS_EQUAL | GREATER_EQUAL ;
+LOGIC_OP ::= AND | OR ;
+
+/* Regole di produzione */
+<Program> ::= <Program> <Statement> SEMICOLON
+            | <Statement> SEMICOLON ;
+
+<Statement> ::= <Select_Statement>
+              | <Insert_Statement>
+              | <Update_Statement>
+              | <Delete_Statement>
+              | <Create_Statement> ;
+
+<Select_Statement> ::= SELECT <Column_List> FROM <Table_List>
+                     | SELECT <Column_List> FROM <Table_List> WHERE <Condition> ;
+
+<Column_List> ::= STAR
+                | IDENTIFIER
+                | IDENTIFIER DOT IDENTIFIER
+                | IDENTIFIER COMMA <Column_List>
+                | IDENTIFIER DOT IDENTIFIER COMMA <Column_List> ;
+
+<Table_List> ::= IDENTIFIER
+               | IDENTIFIER COMMA <Table_List> ;
+
+<Condition> ::= <Condition> LOGIC_OP <Expression>
+              | <Expression> ;
+
+<Expression> ::= <Expression> COMPARISON <Term>
+               | <Term> ;
+
+<Term> ::= IDENTIFIER
+         | NUMBER_LITERAL
+         | NULL ;
+
+<Insert_Statement> ::= INSERT INTO IDENTIFIER LEFT_PAREN <Column_List> RIGHT_PAREN VALUES LEFT_PAREN <Value_List> RIGHT_PAREN
+                     | INSERT INTO IDENTIFIER LEFT_PAREN <Column_List> RIGHT_PAREN SELECT <Column_List> FROM <Table_List> ;
+
+<Value_List> ::= <Value_List> COMMA <Term>
+               | <Term> ;
+
+<Update_Statement> ::= UPDATE IDENTIFIER SET <Assignment_List>
+                     | UPDATE IDENTIFIER SET <Assignment_List> WHERE <Condition> ;
+
+<Assignment_List> ::= <Assignment_List> COMMA <Assignment>
+                    | <Assignment> ;
+
+<Assignment> ::= IDENTIFIER EQUALS <Term> ;
+
+<Delete_Statement> ::= DELETE FROM IDENTIFIER
+                     | DELETE FROM IDENTIFIER WHERE <Condition> ;
+
+<Create_Statement> ::= CREATE TABLE IDENTIFIER LEFT_PAREN <Column_Definition_List> RIGHT_PAREN ;
+
+<Column_Definition_List> ::= <Column_Definition_List> COMMA <Column_Definition>
+                           | <Column_Definition> ;
+
+<Column_Definition> ::= IDENTIFIER <Data_Type>
+                      | IDENTIFIER <Data_Type> <Constraint> ;
+
+<Data_Type> ::= INT
+              | VARCHAR LEFT_PAREN NUMBER_LITERAL RIGHT_PAREN
+              | DATE
+              | BOOLEAN ;
+
+<Constraint> ::= NOT NULL
+               | PRIMARY KEY
+               | UNIQUE ;

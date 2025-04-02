@@ -16,164 +16,352 @@ TOKEN : {
 }
 
 TOKEN : {
-  <ASSIGNMENT : ":=">
+  <SELECT : "SELECT">
 }
 
 TOKEN : {
-  <SUM_DIF : "+" | "-">
+  <FROM : "FROM">
 }
 
 TOKEN : {
-  <MUL_DIV : "*" | "/">
+  <WHERE : "WHERE">
 }
 
 TOKEN : {
-  <LEF_PAR : "(">
+  <AND : "AND">
 }
 
 TOKEN : {
-  <RIGHT_PAR : ")">
+  <OR : "OR">
 }
 
 TOKEN : {
-  <WRITE : "WRITE">
+  <INSERT : "INSERT">
 }
 
 TOKEN : {
-  <READ : "READ">
+  <INTO : "INTO">
 }
 
 TOKEN : {
-  <IF : "IF">
+  <VALUES : "VALUES">
 }
 
 TOKEN : {
-  <THEN : "THEN">
+  <UPDATE : "UPDATE">
 }
 
 TOKEN : {
-  <ELSE : "ELSE">
+  <SET : "SET">
 }
 
 TOKEN : {
-  <REPEAT : "REPEAT">
+  <DELETE : "DELETE">
 }
 
 TOKEN : {
-  <UNTIL : "UNTIL">
+  <CREATE : "CREATE">
 }
 
 TOKEN : {
-  <COMPARISON : "==" | "!=" | "<" | "<=" | ">" | ">=">
+  <TABLE : "TABLE">
 }
 
 TOKEN : {
-  <ID : ["a"-"z", "A"-"Z"](["a"-"z", "A"-"Z", "0"-"9"])*>
+  <PRIMARY : "PRIMARY">
 }
 
 TOKEN : {
-  <NUMBER : (["0"-"9"])+>
+  <KEY : "KEY">
+}
+
+TOKEN : {
+  <NOT : "NOT">
+}
+
+TOKEN : {
+  <NULL : "NULL">
+}
+
+TOKEN : {
+  <UNIQUE : "UNIQUE">
+}
+
+TOKEN : {
+  <INT : "INT">
+}
+
+TOKEN : {
+  <VARCHAR : "VARCHAR">
+}
+
+TOKEN : {
+  <DATE : "DATE">
+}
+
+TOKEN : {
+  <BOOLEAN : "BOOLEAN">
+}
+
+TOKEN : {
+  <EQUALS : "=">
+}
+
+TOKEN : {
+  <NOT_EQUALS : "<>">
+}
+
+TOKEN : {
+  <LESS_THAN : "<">
+}
+
+TOKEN : {
+  <GREATER_THAN : ">">
+}
+
+TOKEN : {
+  <LESS_EQUAL : "<=">
+}
+
+TOKEN : {
+  <GREATER_EQUAL : ">=">
+}
+
+TOKEN : {
+  <COMMA : ",">
+}
+
+TOKEN : {
+  <LEFT_PAREN : "(">
+}
+
+TOKEN : {
+  <RIGHT_PAREN : ")">
+}
+
+TOKEN : {
+  <DOT : ".">
+}
+
+TOKEN : {
+  <STAR : "*">
+}
+
+TOKEN : {
+  <IDENTIFIER : ["a"-"z", "A"-"Z"](["a"-"z", "A"-"Z", "0"-"9", "_"])*>
+}
+
+TOKEN : {
+  <NUMBER_LITERAL : (["0"-"9"])+(("."(["0"-"9"])+))?>
+}
+
+TOKEN : {
+  <COMPARISON :  |  |  |  |  | >
+}
+
+TOKEN : {
+  <LOGIC_OP :  | >
 }
 
 void Program() :
 {
 }
 {
-( Statements())* <EOF>}
-
-void Statements() :
-{
-}
-{
- Statement() [ StatementsSuffix()]}
+ Statement() <SEMICOLON> [ ProgramTail()] <EOF>}
 
 void Statement() :
 {
 }
 {
- CallRead() |
- CallWrite() |
- Assignment() |
- IfThen() |
- RepeatUntil()}
+ Select_Statement() |
+ Insert_Statement() |
+ Update_Statement() |
+ Delete_Statement() |
+ Create_Statement()}
 
-void CallRead() :
+void Select_Statement() :
 {
 }
 {
- <READ> <LEF_PAR> <ID> <RIGHT_PAR>}
+ <SELECT> Column_List() <FROM> Table_List() [ Select_StatementSuffix()]}
 
-void CallWrite() :
+void Insert_Statement() :
 {
 }
 {
- <WRITE> <LEF_PAR> <ID> <RIGHT_PAR>}
+ <INSERT> <INTO> <IDENTIFIER> <LEFT_PAREN> Column_List() <RIGHT_PAREN> [ Insert_StatementSuffix()]}
 
-void Assignment() :
+void Update_Statement() :
 {
 }
 {
- <ID> <ASSIGNMENT> Expression()}
+ <UPDATE> <IDENTIFIER> <SET> Assignment_List() [ Update_StatementSuffix()]}
 
-void IfThen() :
+void Delete_Statement() :
 {
 }
 {
- <IF> Condition() <THEN> Statements() [ IfThenSuffix()]}
+ <DELETE> <FROM> <IDENTIFIER> [ Delete_StatementSuffix()]}
 
-void RepeatUntil() :
+void Create_Statement() :
 {
 }
 {
- <REPEAT> Statements() <UNTIL> Condition()}
+ <CREATE> <TABLE> <IDENTIFIER> <LEFT_PAREN> Column_Definition_List() <RIGHT_PAREN>}
 
-void Expression() :
+void Column_List() :
 {
 }
 {
- MulDivExpr() [ ExpressionTail()]}
+ <STAR> |
+ <IDENTIFIER> |
+ <IDENTIFIER> <DOT> <IDENTIFIER> |
+ <IDENTIFIER> <COMMA> Column_List() |
+ <IDENTIFIER> <DOT> <IDENTIFIER> <COMMA> Column_List()}
 
-void MulDivExpr() :
+void Table_List() :
 {
 }
 {
- Factor() [ MulDivExprTail()]}
-
-void Factor() :
-{
-}
-{
- <ID> |
- <NUMBER> |
- ( <LEF_PAR> Expression() <RIGHT_PAR>)}
+ <IDENTIFIER> [ Table_ListSuffix()]}
 
 void Condition() :
 {
 }
 {
- Expression() <COMPARISON> Expression()}
+ Expression() [ ConditionTail()]}
 
-void MulDivExprTail() :
+void Expression() :
 {
 }
 {
- <MUL_DIV> Factor() [ MulDivExprTail()]}
+ Term() [ ExpressionTail()]}
+
+void Term() :
+{
+}
+{
+ <IDENTIFIER> |
+ <NUMBER_LITERAL> |
+ <NULL>}
+
+void Value_List() :
+{
+}
+{
+ Term() [ Value_ListTail()]}
+
+void Assignment_List() :
+{
+}
+{
+ Assignment() [ Assignment_ListTail()]}
+
+void Assignment() :
+{
+}
+{
+ <IDENTIFIER> <EQUALS> Term()}
+
+void Column_Definition_List() :
+{
+}
+{
+ Column_Definition() [ Column_Definition_ListTail()]}
+
+void Column_Definition() :
+{
+}
+{
+ <IDENTIFIER> Data_Type() [ Column_DefinitionSuffix()]}
+
+void Data_Type() :
+{
+}
+{
+ <INT> |
+ <VARCHAR> <LEFT_PAREN> <NUMBER_LITERAL> <RIGHT_PAREN> |
+ <DATE> |
+ <BOOLEAN>}
+
+void Constraint() :
+{
+}
+{
+ <NOT> <NULL> |
+ <PRIMARY> <KEY> |
+ <UNIQUE>}
+
+void Select_StatementSuffix() :
+{
+}
+{
+ <WHERE> Condition()}
+
+void Delete_StatementSuffix() :
+{
+}
+{
+ <WHERE> Condition()}
+
+void Update_StatementSuffix() :
+{
+}
+{
+ <WHERE> Condition()}
+
+void Table_ListSuffix() :
+{
+}
+{
+ <COMMA> Table_List()}
+
+void ProgramTail() :
+{
+}
+{
+ Statement() <SEMICOLON> [ ProgramTail()]}
+
+void ConditionTail() :
+{
+}
+{
+ <LOGIC_OP> Expression() [ ConditionTail()]}
 
 void ExpressionTail() :
 {
 }
 {
- <SUM_DIF> MulDivExpr() [ ExpressionTail()]}
+ <COMPARISON> Term() [ ExpressionTail()]}
 
-void IfThenSuffix() :
+void Value_ListTail() :
 {
 }
 {
- <ELSE> Statements()}
+ <COMMA> Term() [ Value_ListTail()]}
 
-void StatementsSuffix() :
+void Insert_StatementSuffix() :
 {
 }
 {
- <SEMICOLON> Statements()}
+ <VALUES> <LEFT_PAREN> Value_List() <RIGHT_PAREN> |
+ <SELECT> Column_List() <FROM> Table_List()}
+
+void Assignment_ListTail() :
+{
+}
+{
+ <COMMA> Assignment() [ Assignment_ListTail()]}
+
+void Column_DefinitionSuffix() :
+{
+}
+{
+ Constraint()}
+
+void Column_Definition_ListTail() :
+{
+}
+{
+ <COMMA> Column_Definition() [ Column_Definition_ListTail()]}
 

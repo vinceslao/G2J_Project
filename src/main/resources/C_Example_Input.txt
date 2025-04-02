@@ -1,0 +1,41 @@
+
+LEFT_ROUND_BRACKET ::= "(" ;
+RIGHT_ROUND_BRACKET ::= ")" ;
+LEFT_CURLY_BRACKET ::= "{" ;
+RIGHT_CURLY_BRACKET ::= "}" ;
+SEMICOLON ::= ";" ;
+
+IF ::= "if" ;
+ELSE ::= "else" ;
+FOR ::= "for" ;
+WHILE ::= "while" ;
+ASSIGN ::= "=" ;
+COMPARISON ::= "==" | "!=" | "<" | "<=" | ">" | ">=" ;
+SUM_DIF ::= "+" | "-" ;
+MUL_DIV ::= "*" | "/" ;
+PIPE ::= "|" ;
+TYPE ::= "int" | "double" | "float" | "char" | "byte" ;
+COMMA ::= "," ;
+
+ID ::= [a-zA-Z_][a-zA-Z0-9_]* ;
+NUM ::= [0-9]+ ;
+
+<Program> ::= {<Statement>} EOF;
+
+<Statement> ::= <IfStatement> | <ForStatement> | <WhileStatement> | <Declaration> | <Assignment> SEMICOLON ;
+
+<IfStatement> ::= IF LEFT_ROUND_BRACKET <Condition> RIGHT_ROUND_BRACKET LEFT_CURLY_BRACKET {[<Statement>]} RIGHT_CURLY_BRACKET [ ELSE LEFT_CURLY_BRACKET {[<Statement>]} RIGHT_CURLY_BRACKET ] ;
+
+<ForStatement> ::= FOR LEFT_ROUND_BRACKET <Assignment> SEMICOLON <Condition> SEMICOLON <Assignment> RIGHT_ROUND_BRACKET LEFT_CURLY_BRACKET {[<Statement>]} RIGHT_CURLY_BRACKET ;
+
+<WhileStatement> ::= WHILE LEFT_ROUND_BRACKET <Condition> RIGHT_ROUND_BRACKET LEFT_CURLY_BRACKET {[<Statement>]} RIGHT_CURLY_BRACKET ;
+
+<Declaration> ::= TYPE ID {[ COMMA ID ]} ;
+
+<Assignment> ::= ID ASSIGN <Expression> ;
+
+<Condition> ::= <Expression> COMPARISON <Expression> ;
+
+<Expression> ::= ID | NUM | <Expression> ( SUM_DIF PIPE MUL_DIV ) <Expression> ;
+
+

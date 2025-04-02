@@ -119,6 +119,20 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
         return visitChildren(ctx);
     }
 
+    @Override
+    public Void visitRegex (G2JParser.RegexContext ctx) {
+        return visitChildren(ctx);
+    }
+
+    @Override
+    public Void visitPrimary (G2JParser.PrimaryContext ctx) {
+        if (ctx.TERM() != null && !Objects.equals(ctx.TERM().getText(), "EOF")) {
+        String terminal = ctx.TERM().getText();
+        symbolTable.markAsUsed(terminal);
+        }
+        return visitChildren(ctx);
+    }
+
     // ==================== Semantic Analysis Methods ====================
 
     public void checkSemantics() {
@@ -528,50 +542,56 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
             if (productionList != null) {
                 for (List<String> production : productionList) {
                     // Conta le strutture di controllo all'interno di ogni produzione
-                    int openRoundBrackets = 0;
+                    int openRepOptBrackets = 0;
                     int openSquareBrackets = 0;
                     int openCurlyBrackets = 0;
 
-                    for (String element : production) {
-                        // Conta i raggruppamenti (parentesi tonde)
-                        if (element.equals("(")) {
-                            openRoundBrackets++;
-                        } else if (element.equals(")")) {
-                            if (openRoundBrackets > 0) {
-                                complexity++; // Aumenta la complessità per ogni coppia di parentesi tonde
-                                openRoundBrackets--;
-                            }
-                        }
+                    for (int i = 0; i < production.size(); i++) {
+                        String current = production.get(i);
 
+                        // Controlla se possiamo accedere all'elemento successivo
+                        boolean hasNext = i < production.size() - 1;
+
+                        // Conta i raggruppamenti (parentesi tonde)
+                        if (hasNext && current.equals("{") && production.get(i+1).equals("[")) {
+                            openRepOptBrackets++;
+                            i++; // Saltiamo il prossimo elemento perché già processato
+                        }
+                        else if (hasNext && current.equals("]") && production.get(i+1).equals("}")) {
+                            if (openRepOptBrackets > 0) {
+                                complexity++; // Aumenta la complessità per ogni coppia di parentesi tonde
+                                openRepOptBrackets--;
+                            }
+                            i++; // Saltiamo il prossimo elemento perché già processato
+                        }
                         // Conta le opzionalità (parentesi quadre)
-                        else if (element.equals("[")) {
+                        else if (current.equals("[")) {
                             openSquareBrackets++;
-                        } else if (element.equals("]")) {
+                        }
+                        else if (current.equals("]")) {
                             if (openSquareBrackets > 0) {
                                 complexity++; // Aumenta la complessità per ogni coppia di parentesi quadre
                                 openSquareBrackets--;
                             }
                         }
-
                         // Conta le ripetizioni (parentesi graffe)
-                        else if (element.equals("{")) {
+                        else if (current.equals("{")) {
                             openCurlyBrackets++;
-                        } else if (element.equals("}")) {
+                        }
+                        else if (current.equals("}")) {
                             if (openCurlyBrackets > 0) {
                                 complexity++; // Aumenta la complessità per ogni coppia di parentesi graffe
                                 openCurlyBrackets--;
                             }
                         }
-
                         // Controlla anche per le parentesi nel testo (come nelle regole ottimizzate)
-                        else if (element.startsWith("[") && element.endsWith("]")) {
+                        else if (current.startsWith("[") && current.endsWith("]")) {
                             complexity++; // Opzionalità incorporata
                         }
                     }
                 }
             }
         }
-
         return complexity;
     }
 

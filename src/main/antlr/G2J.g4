@@ -51,6 +51,7 @@ primary    : CHAR                // Un carattere normale
            | CHAR_CLASS        // Una classe di caratteri come [a-zA-Z_]
            | LEFT_ROUND_BRACKET regex RIGHT_ROUND_BRACKET    // Un gruppo tra parentesi
            | STRING
+           | TERM
            ;
 
 
@@ -71,14 +72,14 @@ RIGHT_CURLY_BRACKET: '}';
 
 // Identificatori per non terminali e terminali
 TERM: [A-Z][A-Z_]* ;
-NON_TERM: '<' [A-Z][a-zA-Z]* '>' ;
+NON_TERM: '<' [A-Z][a-zA-Z_]* '>' ;
 
 // Stringhe tra virgolette
 STRING: '"' .*? '"';
 
 // Token espressioni regolari
 NEGATION  : '^' ; // Per classi negate come [^a-z]
-CHAR      : [a-zA-Z0-9] ; // Lettere, numeri e underscore
+CHAR      : [a-zA-Z0-9_] ; // Lettere, numeri e underscore
 ESCAPED_CHAR : '\\' [dwsrtfn\\.*+?()|[\]] ; // Escape per caratteri speciali
 CHAR_CLASS : '[' NEGATION? (CHAR | ESCAPED_CHAR | '-')+ ']' ; // Classe di caratteri
 DOT: '.';

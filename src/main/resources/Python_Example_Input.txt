@@ -1,0 +1,33 @@
+DEF ::= "def" ;
+IF ::= "if" ;
+ELSE ::= "else" ;
+
+NEWLINE ::= "\n" ;
+INDENT ::= "    " ;
+SEMICOLON ::= ";" ;
+LEFT_ROUND_BRACKET ::= "(" ;
+RIGHT_ROUND_BRACKET ::= ")" ;
+COLON ::= ":" ;
+COMMA ::= "," ;
+SUM_DIF ::= "+" | "-" ;
+MUL_DIV ::= "*" | "/" ;
+PIPE ::= "|" ;
+ASSIGN ::= "=" ;
+
+ID ::= [a-zA-Z_][a-zA-Z0-9_]* ;
+NUM ::= [0-9]+ ;
+
+<Program> ::= {<Statement>} EOF;
+
+<Statement> ::= <FunctionDef> | <IfStatement> | <Assignment> NEWLINE ;
+
+<FunctionDef> ::= DEF ID LEFT_ROUND_BRACKET [ <Params> ] RIGHT_ROUND_BRACKET COLON NEWLINE INDENT {<Statement>} SEMICOLON ;
+
+<IfStatement> ::= IF <Expression> COLON NEWLINE INDENT {<Statement>} SEMICOLON [ ELSE COLON NEWLINE INDENT {<Statement>} SEMICOLON ] ;
+
+<Assignment> ::= ID ASSIGN <Expression> ;
+
+<Params> ::= ID {[ COMMA ID ]} ;
+
+<Expression> ::= ID | NUM | <Expression> SUM_DIF PIPE MUL_DIV <Expression> ;
+

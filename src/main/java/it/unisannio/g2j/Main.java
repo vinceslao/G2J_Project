@@ -17,7 +17,11 @@ public class Main {
 
         // ============= ANALISI LESSICALE, SINTATTICA E SEMANTICA DEL FILE DI INPUT =================
 
-        String fileName = "src/main/resources/input.txt";
+    //    String fileName = "src/main/resources/Tiny_Example_Input.txt";
+    //    String fileName = "src/main/resources/C_Example_Input.txt";
+    //    String fileName = "src/main/resources/Python_Example_Input.txt";
+    //    String fileName = "src/main/resources/Java_Example_Input.txt";
+        String fileName = "src/main/resources/SQL_Example_Input.txt";
         InputStream input = new FileInputStream(fileName);
         G2JLexer lexer = new G2JLexer(CharStreams.fromStream(input));
         CommonTokenStream tokens = new CommonTokenStream(lexer);
@@ -26,7 +30,6 @@ public class Main {
         ANTLRErrorStrategy errorStrategy = new CustomErrorStrategy();
         parser.setErrorHandler(errorStrategy);
 
-        // Disabilita l'opzione BailErrorStrategy che causerebbe l'arresto al primo errore
         parser.setBuildParseTree(true);
 
         System.out.println("Inizio parsing con recovery attivato...");

@@ -1,0 +1,92 @@
+LEFT_ROUND_BRACKET ::= "(" ;
+RIGHT_ROUND_BRACKET ::= ")" ;
+LEFT_CURLY_BRACKET ::= "{" ;
+RIGHT_CURLY_BRACKET ::= "}" ;
+SEMICOLON ::= ";" ;
+
+IF ::= "if" ;
+ELSE ::= "else" ;
+FOR ::= "for" ;
+WHILE ::= "while" ;
+RETURN ::= "return" ;
+CLASS ::= "class" ;
+PUBLIC ::= "public" ;
+PRIVATE ::= "private" ;
+STATIC ::= "static" ;
+VOID ::= "void" ;
+
+ASSIGN ::= "=" ;
+COMPARISON ::= "==" | "!=" | "<" | "<=" | ">" | ">=" ;
+SUM_DIF ::= "+" | "-" ;
+MUL_DIV ::= "*" | "/" ;
+PIPE ::= "|" ;
+
+TYPE ::= "int" | "double" | "float" | "char" | "byte" | "boolean" | "String" ;
+COMMA ::= "," ;
+
+ID ::= [a-zA-Z_][a-zA-Z0-9_]* ;
+NUM ::= [0-9]+ ( "." [0-9]+ )? ;
+BOOLEAN_LITERAL ::= "true" | "false" ;
+
+
+<Program> ::= {<ClassDeclaration>} EOF ;
+
+<ClassDeclaration> ::= [ PUBLIC ] CLASS ID LEFT_CURLY_BRACKET {<ClassMember>} RIGHT_CURLY_BRACKET ;
+
+<ClassMember> ::= <FieldDeclaration> | <MethodDeclaration> ;
+
+<FieldDeclaration> ::= [ PUBLIC PIPE PRIVATE ] [ STATIC ] TYPE ID [ ASSIGN <Expression> ] SEMICOLON ;
+
+<MethodDeclaration> ::= [ PUBLIC PIPE PRIVATE ] [ STATIC ] ( TYPE PIPE VOID ) ID LEFT_ROUND_BRACKET [ <ParameterList> ] RIGHT_ROUND_BRACKET
+                       LEFT_CURLY_BRACKET { <Statement> } [ RETURN <Expression> SEMICOLON ] RIGHT_CURLY_BRACKET ;
+
+<ParameterList> ::= TYPE ID {COMMA TYPE ID} ;
+
+<Statement> ::= <IfStatement>
+              | <ForStatement>
+              | <WhileStatement>
+              | <Declaration> SEMICOLON
+              | <Assignment> SEMICOLON
+              | <MethodCall> SEMICOLON
+              | <Block> ;
+
+<IfStatement> ::= IF LEFT_ROUND_BRACKET <Condition> RIGHT_ROUND_BRACKET <Statement>
+                  [ELSE <Statement>] ;
+
+<ForStatement> ::= FOR LEFT_ROUND_BRACKET <Assignment> SEMICOLON [<Condition>] SEMICOLON [<Assignment>] RIGHT_ROUND_BRACKET <Statement>
+                 | FOR LEFT_ROUND_BRACKET <Declaration> SEMICOLON [<Condition>] SEMICOLON [<Assignment>] RIGHT_ROUND_BRACKET <Statement> ;
+
+<WhileStatement> ::= WHILE LEFT_ROUND_BRACKET <Condition> RIGHT_ROUND_BRACKET <Statement> ;
+
+<Block> ::= LEFT_CURLY_BRACKET {<Statement>} RIGHT_CURLY_BRACKET ;
+
+<Declaration> ::= TYPE ID ASSIGN <Expression>
+                | TYPE ID {COMMA ID} ;
+
+<Assignment> ::= ID ASSIGN <Expression> ;
+
+<MethodCall> ::= ID LEFT_ROUND_BRACKET [<ArgumentList>] RIGHT_ROUND_BRACKET ;
+
+<ArgumentList> ::= <Expression> {COMMA <Expression>} ;
+
+<Condition> ::= <Expression> [COMPARISON <Expression>] ;
+
+<Expression> ::= <Expression> SUM_DIF <Term>
+               | <Term> ;
+
+<Term> ::= <Term> MUL_DIV <Factor>
+         | <Factor> ;
+
+<Factor> ::= ID
+           | NUM
+           | BOOLEAN_LITERAL
+           | LEFT_ROUND_BRACKET <Expression> RIGHT_ROUND_BRACKET
+           | <MethodCall>
+           | SUM_DIF <Factor>
+           | <Factor> SUM_DIF ;
+
+<Block> ::= <Block> <Statement>
+          | LEFT_CURLY_BRACKET {<Statement>} RIGHT_CURLY_BRACKET ;
+
+<MethodDeclaration> ::= [ PUBLIC PIPE PRIVATE ] [ STATIC ] TYPE ID LEFT_ROUND_BRACKET [ <ParameterList> ] RIGHT_ROUND_BRACKET LEFT_CURLY_BRACKET { <Statement> } [ RETURN <Expression> SEMICOLON ] RIGHT_CURLY_BRACKET
+                       | [ PUBLIC PIPE PRIVATE ] [ STATIC ] VOID ID LEFT_ROUND_BRACKET [ <ParameterList> ] RIGHT_ROUND_BRACKET LEFT_CURLY_BRACKET { <Statement> } RIGHT_CURLY_BRACKET ;
