@@ -21,6 +21,8 @@ parseRule: NON_TERM ASSIGN productionList;
 // Lista di produzioni (separate da |)
 productionList: production (PIPE production)*;
 
+
+
 // Una produzione
 production: element+ ;
 

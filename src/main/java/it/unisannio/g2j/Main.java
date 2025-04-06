@@ -1,6 +1,7 @@
 package it.unisannio.g2j;
 
 import it.unisannio.g2j.errors.CustomErrorStrategy;
+import it.unisannio.g2j.errors.CollectingErrorListener;
 import it.unisannio.g2j.visitors.AntlrVisitor;
 import it.unisannio.g2j.visitors.JavaCCVisitor;
 import it.unisannio.g2j.visitors.SemanticVisitor;
@@ -17,13 +18,22 @@ public class Main {
 
         // ============= ANALISI LESSICALE, SINTATTICA E SEMANTICA DEL FILE DI INPUT =================
 
-    //    String fileName = "src/main/resources/Tiny_Example_Input.txt";
+        String fileName = "src/main/resources/Tiny_Example_Input.txt";
     //    String fileName = "src/main/resources/C_Example_Input.txt";
     //    String fileName = "src/main/resources/Python_Example_Input.txt";
     //    String fileName = "src/main/resources/Java_Example_Input.txt";
-        String fileName = "src/main/resources/SQL_Example_Input.txt";
+    //    String fileName = "src/main/resources/SQL_Example_Input.txt";
         InputStream input = new FileInputStream(fileName);
+
+        // Crea il listener
+        CollectingErrorListener errorListener = new CollectingErrorListener();
+
+        // Lexer
         G2JLexer lexer = new G2JLexer(CharStreams.fromStream(input));
+        lexer.removeErrorListeners();
+        lexer.addErrorListener(errorListener);
+
+        // Parser
         CommonTokenStream tokens = new CommonTokenStream(lexer);
         G2JParser parser = new G2JParser(tokens);
 
@@ -37,8 +47,11 @@ public class Main {
         // Esegui il parsing
         ParseTree tree = parser.grammarFile();
 
-        if (CustomErrorStrategy.sintaxErrorNum > 0) {
-            System.err.println("Gli errori sono stati gestiti e il parsing è continuato dove possibile.");
+        if (errorListener.hasErrors() || CustomErrorStrategy.sintaxErrorNum > 0 ) {
+            System.err.println("Sono stati rilevati errori durante la fase di analisi:");
+            for (String err : errorListener.getErrors()) {
+                System.err.println(err);
+            }
             return;
         } else {
             System.out.println("Parsing completato senza errori sintattici.");
