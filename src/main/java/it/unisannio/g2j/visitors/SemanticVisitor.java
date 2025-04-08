@@ -72,6 +72,7 @@ public class SemanticVisitor extends G2JBaseVisitor<Void> {
         } else if (ctx.TERM() != null && !Objects.equals(ctx.TERM().getText(), "EOF")) {
             String term = ctx.TERM().getText();
             elements.add(term);
+            symbolTable.addTerminal(term, null);
             symbolTable.markAsUsedTerminal(term);
         } else if (ctx.grouping() != null) {
             visitGrouping(ctx.grouping(), elements);

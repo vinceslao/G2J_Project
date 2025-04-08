@@ -21,6 +21,11 @@ public class SymbolTable {
      */
     public void addTerminal(String name, String definition) {
         if (symbols.containsKey(name)) {
+            // Se il simbolo esiste già e viene fornita una definizione, aggiorniamo la definizione
+            if (definition != null) {
+                Symbol symbol = symbols.get(name);
+                symbol.setDefinition(definition);
+            }
             return;
         }
 
