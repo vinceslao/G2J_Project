@@ -1,23 +1,41 @@
 # G2J - Compilatore per Grammatiche EBNF
 
-G2J è un compilatore che prende in input la definizione di grammatiche scritte in EBNF (Extended Backus-Naur Form) e genera file in formato `.jj` (JavaCC) e `.g4` (ANTLR). Inoltre, esegue l'analisi semantica sulla grammatica fornita, verificando la correttezza e suggerendo ottimizzazioni.
+**G2J** è uno strumento sviluppato in Java che prende in input una grammatica scritta in **EBNF (Extended Backus-Naur Form)** e produce in output file in formato `.jj` (JavaCC) e `.g4` (ANTLR). Durante il processo, esegue un'analisi completa della grammatica per verificarne la correttezza sintattica e semantica, e suggerisce eventuali ottimizzazioni.
 
-## Funzionalità
+## Fasi del Processo
 
-- **Analisi Semantica**: Verifica la correttezza della grammatica, inclusa la presenza di ricorsione sinistra, produzioni non raggiungibili, prefissi comuni e altro.
-- **Generazione di File JavaCC**: Produce un file `.jj` compatibile con JavaCC a partire dalla grammatica EBNF.
-- **Generazione di File ANTLR**: Produce un file `.g4` compatibile con ANTLR a partire dalla grammatica EBNF.
-- **Ottimizzazioni**: Suggerisce ottimizzazioni come l'eliminazione della ricorsione sinistra e la fattorizzazione dei prefissi comuni.
+1. **Definizione della Grammatica**  
+   La grammatica EBNF è il punto di partenza: definisce sia i token sia le regole di produzione. Questo passaggio stabilisce la base dell’analisi successiva.
+
+2. **Analisi Lessicale**  
+   G2J include un lexer progettato per riconoscere gli elementi fondamentali della notazione EBNF: identificatori, numeri, operatori e simboli speciali.
+
+3. **Analisi Sintattica**  
+   Il parser interpreta la struttura delle regole EBNF, assicurandosi che ogni costrutto rispetti le regole formali della grammatica.
+
+4. **Analisi Semantica**  
+   Vengono individuati problemi come ricorsione sinistra, regole non raggiungibili e conflitti dovuti a prefissi comuni. Questo step è essenziale per garantire una grammatica corretta e non ambigua.
+
+5. **Ottimizzazione**  
+   Se rilevati, G2J suggerisce miglioramenti automatici come la rimozione della ricorsione sinistra e la fattorizzazione dei prefissi comuni, rendendo la grammatica più efficiente e leggibile.
+
+6. **Generazione di Output**  
+   A partire dalla grammatica ottimizzata, G2J genera due file: `GrammarOut.jj` per **JavaCC** e `GrammarOut.g4` per **ANTLR**, pronti per essere utilizzati con i rispettivi strumenti di parsing.
+
+---
 
 ## Requisiti
 
-- Java Development Kit (JDK) 8 o superiore
-- ANTLR 4 (opzionale, se si desidera eseguire i file `.g4` generati)
-- JavaCC (opzionale, se si desidera eseguire i file `.jj` generati)
+- **Java Development Kit (JDK)** 8 o superiore
+- **ANTLR 4** (necessario per rigenerare le classi a partire dalla grammatica `.g4`)
+- **Maven** (per compilare ed eseguire il progetto)
+- (Opzionale) **JavaCC** (se si intende utilizzare direttamente il file `.jj`)
 
-## Configurazione
+---
 
-1. Clona il repository:
+## Setup del Progetto
+
+1. **Clona il repository**
 
    ```bash
    git clone https://github.com/vinceslao/G2J_Project.git
