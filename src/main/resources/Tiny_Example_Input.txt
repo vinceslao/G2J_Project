@@ -21,7 +21,7 @@ NUMBER        ::= [0-9]+ ;
 /* Regole di produzione */
 <Program>::= <Statements> EOF ;
 <Statements>::= <Statement> SEMICOLON <Statements> | <Statement> ;
-<Statement>::= <CallRead> | <CallWrite> | <Assignment> | <IfThen> | <RepeatUntil> ;
+<Statement>::= <CallRead> | <CallWrite> | <Assignment> | <IfThen> | <RepeatUntil>;
 <CallWrite>::= WRITE LEF_PAR ID RIGHT_PAR;
 <CallRead>::= READ LEF_PAR ID RIGHT_PAR;
 <Assignment>::= ID ASSIGNMENT <Expression> ;

@@ -48,9 +48,11 @@ public class Main {
         ParseTree tree = parser.grammarFile();
 
         if (errorListener.hasErrors() || CustomErrorStrategy.sintaxErrorNum > 0 ) {
-            System.err.println("Sono stati rilevati errori durante la fase di analisi:");
-            for (String err : errorListener.getErrors()) {
-                System.err.println(err);
+            if (errorListener.hasErrors()){
+                System.err.println("Sono stati rilevati errori durante la fase di analisi:");
+                for (String err : errorListener.getErrors()) {
+                    System.err.println(err);
+                }
             }
             return;
         } else {
