@@ -20,7 +20,7 @@ public class Main {
 
         String fileName = "src/main/resources/Tiny_Example_Input.txt";
     //    String fileName = "src/main/resources/C_Example_Input.txt";
-    //    String fileName = "src/main/resources/Python_Example_Input.txt";
+    //      String fileName = "src/main/resources/Python_Example_Input.txt";
     //    String fileName = "src/main/resources/Java_Example_Input.txt";
     //    String fileName = "src/main/resources/SQL_Example_Input.txt";
         InputStream input = new FileInputStream(fileName);
@@ -54,6 +54,7 @@ public class Main {
                     System.err.println(err);
                 }
             }
+            System.out.println("Parsing con recovery terminato");
             return;
         } else {
             System.out.println("Parsing completato senza errori sintattici.");
